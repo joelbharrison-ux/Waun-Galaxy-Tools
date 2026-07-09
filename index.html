@@ -592,27 +592,37 @@
         };
 
         function parseCSV(text) {
-            // Clean up Excel-specific character line endings gracefully
-            const cleanText = text.replace(/\r/g, "");
+            // Step 1: Strip out potential Byte-Order Marks (BOM) or hidden formatting characters
+            const cleanText = text.replace(/^\uFEFF/, "").replace(/\r/g, "");
             const lines = cleanText.split('\n').filter(line => line.trim() !== '');
             if (lines.length < 2) return;
 
-            const separator = text.includes(';') ? ';' : ',';
+            // Step 2: Dynamically discover the delimiter character (, or ;)
+            const separator = cleanText.includes(';') ? ';' : ',';
+            
+            // Step 3: Parse headers and build lowercase match index array
             const headers = lines[0].split(separator).map(h => h.trim().toLowerCase().replace(/[^a-z0-9 ]/g, ''));
             
-            const refIndex = headers.indexOf('ref');
-            const lineUpNameIndex = headers.indexOf('line up name');
+            let refIndex = headers.indexOf('ref');
+            let lineUpNameIndex = headers.indexOf('line up name');
 
-            const finalRefIndex = refIndex !== -1 ? refIndex : 0;
-            const finalNameIndex = lineUpNameIndex !== -1 ? lineUpNameIndex : 1;
+            // Fallback Plan: If header labels match incorrectly due to excel exports, map via position
+            if (refIndex === -1) refIndex = 0; // Assume Column 1 is Reference ID
+            if (lineUpNameIndex === -1) lineUpNameIndex = 1; // Assume Column 2 is Player Name
 
+            // Step 4: Parse lines cleanly
             for (let i = 1; i < lines.length; i++) {
                 const cols = lines[i].split(separator);
-                if (cols.length > Math.max(finalRefIndex, finalNameIndex)) {
-                    playerData.push({
-                        ref: cols[finalRefIndex].trim(),
-                        lineUpName: cols[finalNameIndex].trim()
-                    });
+                if (cols.length > Math.max(refIndex, lineUpNameIndex)) {
+                    const rawRef = cols[refIndex].trim();
+                    const rawName = cols[lineUpNameIndex].trim();
+                    
+                    if (rawRef && rawName) {
+                        playerData.push({
+                            ref: rawRef,
+                            lineUpName: rawName
+                        });
+                    }
                 }
             }
             populateDropdown();
@@ -620,7 +630,8 @@
 
         function populateDropdown() {
             const select = document.getElementById('playerSelect');
-            select.innerHTML = '<option value="">-- Select Line Up Name --</option>'; // Clear default
+            select.innerHTML = '<option value="">-- Select Line Up Name --</option>'; // Reset context layout
+            
             playerData.forEach(player => {
                 if(player.lineUpName) {
                     const option = document.createElement('option');
@@ -661,7 +672,7 @@
 
             document.getElementById('playerName').textContent = player.lineUpName;
 
-            // Strict deterministic scan sequence for manual renaming structure
+            // Strict target sequencing scanner for manual file renaming structures
             const potentialFiles = [
                 `Images/${player.ref}/01.png`,
                 `Images/${player.ref}/01.jpg`,
@@ -705,7 +716,7 @@
                     };
                 }
             } else {
-                // Default fallback option configuration
+                // Default image layout assignment fallback pattern rule if missing completely
                 imgElement.src = `Images/${player.ref}.jpg`;
                 imgElement.style.display = "block";
             }
