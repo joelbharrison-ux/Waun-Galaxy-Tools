@@ -395,7 +395,7 @@
             border-right: none;
         }
 
-        /* MOBILE LAYOUT RESPONSIVE SYSTEM */
+        /* MOBILE RESPONSIVE LAYOUT SYSTEM */
         @media screen and (max-width: 1130px) {
             body {
                 flex-direction: column;
@@ -570,4 +570,167 @@
 
         function resetSliders() {
             zoomSlider.value = 1;
-            xSlider.value =
+            xSlider.value = 0;
+            ySlider.value = 0;
+            document.getElementById('zoomVal').textContent = '1.0x';
+            document.getElementById('xVal').textContent = '0%';
+            document.getElementById('yVal').textContent = '0%';
+            const img = document.getElementById('playerImg');
+            if(img) img.style.transform = 'scale(1) translate(0%, 0%)';
+        }
+
+        window.onload = async function() {
+            try {
+                const response = await fetch('Player List.csv?v=' + new Date().getTime());
+                if (!response.ok) throw new Error("Could not load CSV file.");
+                const csvText = await response.text();
+                parseCSV(csvText);
+            } catch (error) {
+                alert("Error connecting to 'Player List.csv'. Ensure the CSV file is named correctly and uploaded alongside this file.");
+                console.error(error);
+            }
+        };
+
+        function parseCSV(text) {
+            // Clean up Excel-specific character line endings gracefully
+            const cleanText = text.replace(/\r/g, "");
+            const lines = cleanText.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) return;
+
+            const separator = text.includes(';') ? ';' : ',';
+            const headers = lines[0].split(separator).map(h => h.trim().toLowerCase().replace(/[^a-z0-9 ]/g, ''));
+            
+            const refIndex = headers.indexOf('ref');
+            const lineUpNameIndex = headers.indexOf('line up name');
+
+            const finalRefIndex = refIndex !== -1 ? refIndex : 0;
+            const finalNameIndex = lineUpNameIndex !== -1 ? lineUpNameIndex : 1;
+
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(separator);
+                if (cols.length > Math.max(finalRefIndex, finalNameIndex)) {
+                    playerData.push({
+                        ref: cols[finalRefIndex].trim(),
+                        lineUpName: cols[finalNameIndex].trim()
+                    });
+                }
+            }
+            populateDropdown();
+        }
+
+        function populateDropdown() {
+            const select = document.getElementById('playerSelect');
+            select.innerHTML = '<option value="">-- Select Line Up Name --</option>'; // Clear default
+            playerData.forEach(player => {
+                if(player.lineUpName) {
+                    const option = document.createElement('option');
+                    option.value = player.ref;
+                    option.textContent = player.lineUpName;
+                    select.appendChild(option);
+                }
+            });
+            select.addEventListener('change', handlePlayerChange);
+        }
+
+        async function checkImageExists(url) {
+            try {
+                const res = await fetch(url, { method: 'HEAD' });
+                return res.ok;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function handlePlayerChange() {
+            resetSliders();
+            const selectedRef = document.getElementById('playerSelect').value;
+            const player = playerData.find(p => p.ref === selectedRef);
+            
+            const photoBox = document.getElementById('photoSelectorBox');
+            const photoSelect = document.getElementById('photoSelect');
+            const imgElement = document.getElementById('playerImg');
+            
+            photoBox.style.display = "none";
+            photoSelect.innerHTML = "";
+            imgElement.style.display = "none";
+
+            if (!player) {
+                document.getElementById('playerName').textContent = "SELECT A PLAYER";
+                return;
+            }
+
+            document.getElementById('playerName').textContent = player.lineUpName;
+
+            // Strict deterministic scan sequence for manual renaming structure
+            const potentialFiles = [
+                `Images/${player.ref}/01.png`,
+                `Images/${player.ref}/01.jpg`,
+                `Images/${player.ref}/01.jpeg`,
+                `Images/${player.ref}/02.png`,
+                `Images/${player.ref}/02.jpg`,
+                `Images/${player.ref}/02.jpeg`,
+                `Images/${player.ref}/03.png`,
+                `Images/${player.ref}/03.jpg`,
+                `Images/${player.ref}/03.jpeg`
+            ];
+
+            let foundImages = [];
+            for (let url of potentialFiles) {
+                let exists = await checkImageExists(url);
+                if (exists) {
+                    foundImages.push(url);
+                }
+            }
+
+            if (foundImages.length > 0) {
+                if (foundImages.length === 1) {
+                    imgElement.src = foundImages[0];
+                    imgElement.style.display = "block";
+                } else {
+                    photoBox.style.display = "block";
+                    foundImages.forEach(imgUrl => {
+                        const opt = document.createElement('option');
+                        const displayTitle = imgUrl.substring(imgUrl.lastIndexOf('/') + 1);
+                        opt.value = imgUrl;
+                        opt.textContent = displayTitle;
+                        photoSelect.appendChild(opt);
+                    });
+                    
+                    imgElement.src = foundImages[0];
+                    imgElement.style.display = "block";
+                    
+                    photoSelect.onchange = function() {
+                        imgElement.src = this.value;
+                        resetSliders();
+                    };
+                }
+            } else {
+                // Default fallback option configuration
+                imgElement.src = `Images/${player.ref}.jpg`;
+                imgElement.style.display = "block";
+            }
+        }
+
+        function downloadPoster() {
+            const posterElement = document.getElementById('poster');
+            const nameText = document.getElementById('playerName').textContent;
+            
+            window.scrollTo(0,0); 
+            
+            html2canvas(posterElement, { 
+                useCORS: true, 
+                scale: 2,
+                logging: false,
+                allowTaint: true,
+                windowWidth: 750,
+                windowHeight: 750
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${nameText.replace(/\s+/g, '_')}_Sponsorship.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
