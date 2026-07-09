@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waunarlwydd Galaxy - Social Media Poster Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
+
+        :root {
+            --dark-bg: #08090a;         /* Deep fixture background black */
+            --card-bg: #111413;         /* Dark card filling */
+            --accent-green: #2db92d;    /* Vibrant Neon Galaxy Green */
+            --border-green: #124012;    /* Darker fixture-box outline green */
+            --text-light: #ffffff;
+            --text-muted: #a0a5a1;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #1a1d20;
+            display: flex;
+            padding: 30px;
+            gap: 30px;
+            margin: 0;
+            color: var(--text-light);
+        }
+
+        /* Controls Column */
+        .controls-panel {
+            flex: 1;
+            max-width: 340px;
+            background: #22262a;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            height: fit-content;
+            box-sizing: border-box;
+            border: 1px solid #2d3238;
+        }
+
+        .controls-panel h2 {
+            margin-top: 0;
+            font-size: 20px;
+            color: var(--text-light);
+            border-bottom: 2px solid #2d3238;
+            padding-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            margin: 18px 0 6px 0;
+            color: var(--accent-green);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, button, input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #3a4149;
+            background-color: #16191c;
+            color: white;
+            font-size: 15px;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        input[type="file"] {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(45, 185, 45, 0.15);
+        }
+
+        /* Framing / Tool Sliders */
+        .slider-group {
+            background: #16191c;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #3a4149;
+        }
+
+        .slider-group h3 {
+            margin: 0 0 12px 0;
+            font-size: 13px;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slider-item {
+            margin-bottom: 12px;
+        }
+
+        .slider-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-item div {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-green);
+            cursor: pointer;
+        }
+
+        .photo-selector-box {
+            background: #1c211e;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border: 1px dashed var(--accent-green);
+        }
+
+        button.download-btn {
+            background-color: var(--accent-green);
+            color: black;
+            border: none;
+            cursor: pointer;
+            font-weight: 900;
+            margin-top: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: opacity 0.2s;
+            font-size: 14px;
+        }
+
+        button.download-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* POSTER CANVAS (Perfect Square Ratio for IG/FB grids) */
+        .poster-canvas {
+            width: 750px;
+            height: 750px;
+            background-color: var(--dark-bg);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Top Section: High-End Dynamic Showcase Graphics (Height Expanded) */
+        .top-showcase {
+            position: relative;
+            height: 62%;
+            display: flex;
+            align-items: flex-end;
+            padding: 0 45px 30px 45px;
+            box-sizing: border-box;
+            background: radial-gradient(circle at 20% 30%, #0d2b11 0%, #08090a 100%);
+            border-bottom: 4px solid var(--accent-green);
+        }
+
+        /* Image Framing Viewport Window (Expanded horizontal width for larger photo view) */
+        .player-photo-viewport {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        .player-photo-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: auto; 
+            display: block;
+            transform-origin: center center;
+        }
+
+        /* Dynamic shadow gradient overlay on top of player picture */
+        .player-photo-viewport::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--dark-bg) 0%, rgba(8,9,10,0.2) 40%, transparent 70%),
+                        linear-gradient(0deg, var(--dark-bg) 0%, transparent 25%);
+            z-index: 3;
+        }
+
+        /* Branding Core Header Layout block (Centered Logo Only) */
+        .brand-header {
+            position: absolute;
+            top: 20px;
+            left: 45px;
+            display: flex;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .club-badge {
+            width: 180px;
+            height: 180px;
+            object-fit: contain;
+            display: block;
+            filter: drop-shadow(0 0 12px rgba(45, 185, 45, 0.5));
+        }
+
+        .player-info-text {
+            position: relative;
+            z-index: 5;
+            max-width: 50%;
+        }
+
+        .player-info-text h1 {
+            margin: 0;
+            font-size: 44px;
+            font-weight: 900;
+            color: white;
+            text-transform: uppercase;
+            line-height: 1.05;
+            letter-spacing: 0.5px;
+            text-shadow: 0 3px 10px rgba(0,0,0,0.9);
+            word-wrap: break-word;
+        }
+
+        .sponsor-tag {
+            display: inline-block;
+            background-color: var(--accent-green);
+            color: black;
+            padding: 6px 16px;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            border-radius: 4px;
+            margin-top: 12px;
+            letter-spacing: 1.5px;
+            box-shadow: 0 4px 10px rgba(45, 185, 45, 0.3);
+        }
+
+        /* Middle Section: Packages Grid Layout (Size Reduced) */
+        .packages-section {
+            background-color: var(--dark-bg);
+            padding: 15px 30px 10px 30px;
+            z-index: 6;
+            position: relative;
+        }
+
+        .packages-header-badge {
+            background: var(--accent-green);
+            color: black;
+            width: fit-content;
+            margin: -29px auto 12px auto;
+            padding: 5px 22px;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            clip-path: polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        .packages-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .package-card {
+            background: var(--card-bg);
+            border-radius: 6px;
+            border: 1px solid var(--border-green);
+            padding: 12px 10px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .package-icon {
+            width: 26px;
+            height: 26px;
+            margin-bottom: 4px;
+        }
+
+        .package-title {
+            font-size: 11px;
+            font-weight: 900;
+            color: white;
+            text-transform: uppercase;
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.2;
+            letter-spacing: 0.2px;
+        }
+
+        .package-divider {
+            width: 75%;
+            height: 1px;
+            background: var(--border-green);
+            margin: 6px 0;
+        }
+
+        .package-price {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--accent-green);
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .package-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+            width: 100%;
+        }
+
+        .package-features li {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            line-height: 1.3;
+            padding-left: 14px;
+            position: relative;
+        }
+
+        .package-features li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--accent-green);
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        /* Bottom Section: Strategic Marketing Footer Layout */
+        .footer-banner {
+            background-color: #000000;
+            color: white;
+            padding: 12px 20px;
+            text-align: center;
+            z-index: 6;
+            border-top: 1px solid #15181b;
+        }
+
+        .footer-title {
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            margin-bottom: 6px;
+            color: var(--accent-green);
+            border-bottom: 1px solid #111;
+            padding-bottom: 4px;
+        }
+
+        .perks-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .perk-item {
+            font-size: 9px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #b3b3b3;
+            line-height: 1.2;
+            border-right: 1px solid #222;
+            padding: 0 4px;
+            letter-spacing: 0.2px;
+        }
+
+        .perk-item:last-child {
+            border-right: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls-panel">
+        <h2>Poster Controls</h2>
+        
+        <label for="csvFileInput">1. Load Player CSV File:</label>
+        <input type="file" id="csvFileInput" accept=".csv">
+
+        <label for="playerSelect">2. Select Player:</label>
+        <select id="playerSelect">
+            <option value="">-- Upload CSV first --</option>
+        </select>
+
+        <div id="photoSelectorBox" class="photo-selector-box" style="display: none;">
+            <label for="photoSelect">Multiple Photos Found:</label>
+            <select id="photoSelect"></select>
+        </div>
+
+        <div class="slider-group">
+            <h3>Crop & Frame Photo</h3>
+            
+            <div class="slider-item">
+                <div><span>Zoom / Scale</span><span id="zoomVal">1.0x</span></div>
+                <input type="range" id="zoomSlider" min="0.5" max="4" step="0.05" value="1">
+            </div>
+            
+            <div class="slider-item">
+                <div><span>Move Horizontal (X)</span><span id="xVal">0%</span></div>
+                <input type="range" id="xSlider" min="-100" max="100" step="1" value="0">
+            </div>
+            
+            <div class="slider-item">
+                <div><span>Move Vertical (Y)</span><span id="yVal">0%</span></div>
+                <input type="range" id="ySlider" min="-100" max="100" step="1" value="0">
+            </div>
+        </div>
+
+        <button class="download-btn" onclick="downloadPoster()">Download Image</button>
+    </div>
+
+    <div class="poster-canvas" id="poster">
+        
+        <div class="top-showcase">
+            <div class="brand-header">
+                <img src="WaunG.png" alt="Club Badge" class="club-badge" id="clubBadgeEl">
+            </div>
+
+            <div class="player-photo-viewport">
+                <img src="" alt="" id="playerImg" class="player-photo-bg" style="display: none;">
+            </div>
+            
+            <div class="player-info-text">
+                <h1 id="playerName">SELECT A PLAYER</h1>
+                <div class="sponsor-tag">Available to Sponsor</div>
+            </div>
+        </div>
+
+        <div class="packages-section">
+            <div class="packages-header-badge">Sponsorship Packages</div>
+            
+            <div class="packages-grid">
+                <div class="package-card">
+                    <svg class="package-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="1.5"><path d="M20.38 4.22a.75.75 0 0 0-.6-.22L15 4.5 9 4.05 4.22 3.62a.75.75 0 0 0-.72.48L2.1 8.22A.75.75 0 0 0 2.5 9.1l2 .8v10.35a.75.75 0 0 0 .75.75h13.5a.75.75 0 0 0 .75-.75V9.9l2-.8a.75.75 0 0 0 .4-.88l-1.4-4.12zM7 19V9.5l5 1 5-1V19H7z" fill="none"/></svg>
+                    <div class="package-title">Player Sponsor</div>
+                    <div class="package-divider"></div>
+                    <div class="package-price">£200</div>
+                    <ul class="package-features">
+                        <li>Sponsor an

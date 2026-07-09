@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Waunarlwydd Galaxy Matchday Dashboard</title>
+  <style>
+    :root {
+      --green: #0b6d20;
+      --green-dark: #062d10;
+      --green-mid: #0f4f1b;
+      --lime: #61d936;
+      --black: #050805;
+      --white: #f7f7f3;
+      --line: rgba(97, 217, 54, 0.75);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      color: var(--white);
+      background:
+        radial-gradient(circle at 15% 12%, rgba(97, 217, 54, 0.22), transparent 22%),
+        radial-gradient(circle at 88% 40%, rgba(97, 217, 54, 0.18), transparent 20%),
+        linear-gradient(160deg, #030503 0%, #071807 45%, #010201 100%);
+      letter-spacing: 0.03em;
+    }
+    .app { width: min(1180px, 96vw); margin: 0 auto; padding: 28px 0 40px; }
+    .top { display: grid; grid-template-columns: 170px 1fr; gap: 28px; align-items: center; margin-bottom: 22px; }
+    .crest { width: 170px; aspect-ratio: 1; border: 2px solid var(--line); border-radius: 20px; background: rgba(0,0,0,0.42); display: grid; place-items: center; box-shadow: 0 0 30px rgba(80,255,80,.2); overflow: hidden; }
+    .crest img { width: 100%; height: 100%; object-fit: contain; }
+    .crest .fallback { text-align: center; font-size: 26px; line-height: 1; color: white; }
+    h1 { margin: 0; font-size: clamp(56px, 9vw, 132px); line-height: 0.85; text-transform: uppercase; text-shadow: 0 0 18px rgba(255,255,255,.14); }
+    h1 span { display: block; color: #168124; font-size: 0.78em; letter-spacing: .12em; }
+    .match-fields { display: grid; grid-template-columns: 1.5fr 1fr 0.65fr; gap: 18px; margin: 22px 0; }
+    .field { display: grid; grid-template-columns: auto 1fr; border: 2px solid var(--line); border-radius: 8px; overflow: hidden; min-height: 58px; background: #f4f4f2; }
+    .field label { display: grid; place-items: center; padding: 0 18px; color: white; background: linear-gradient(180deg, #135f1d, #05240c); font-size: 25px; text-transform: uppercase; }
+    select, input { width: 100%; border: 0; outline: none; padding: 0 14px; font: 700 21px Arial, sans-serif; background: #f7f7f5; color: #101010; }
+    .panel { border: 2px solid var(--line); border-radius: 10px; overflow: hidden; background: rgba(0,0,0,.42); box-shadow: inset 0 0 80px rgba(97, 217, 54, .08); margin-bottom: 20px; }
+    .split-header { display: grid; grid-template-columns: 56px 1fr 1.35fr; align-items: stretch; border-bottom: 2px solid var(--line); }
+    .split-header .blank { background: linear-gradient(180deg, #135f1d, #041e08); }
+    .split-header h2 { margin: 0; text-align: center; padding: 14px 10px; font-size: 32px; letter-spacing: .08em; text-transform: uppercase; background: linear-gradient(180deg, #135f1d, #041e08); color: white; }
+    .split-header h2.sponsor-title { background: #f7f7f3; color: #05240c; border-left: 3px solid var(--green-dark); }
+    .row { display: grid; grid-template-columns: 56px 1fr 1.35fr; gap: 10px; padding: 6px 14px; align-items: center; }
+    .num { display: grid; place-items: center; min-height: 46px; border: 2px solid var(--line); border-radius: 6px; background: linear-gradient(180deg, #177323, #07290d); font-size: 29px; color: white; }
+    .row select, .row input { min-height: 46px; border-radius: 5px; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+    button { border: 2px solid var(--line); background: linear-gradient(180deg, #187928, #061f0b); color: white; padding: 12px 18px; border-radius: 8px; font: 700 18px Arial, sans-serif; cursor: pointer; }
+    button.secondary { background: #f7f7f3; color: #05240c; }
+    .hint { font: 14px Arial, sans-serif; opacity: .8; margin-top: 10px; }
+    .database { padding: 18px; }
+    .database h2 { margin: 0 0 12px; font-size: 32px; text-transform: uppercase; }
+    .db-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr auto; gap: 10px; align-items: end; }
+    .db-field label { display: block; font: 700 13px Arial, sans-serif; letter-spacing: 0; margin: 0 0 6px; text-transform: uppercase; }
+    .db-field input { min-height: 42px; border-radius: 5px; }
+    .db-table { width: 100%; border-collapse: collapse; margin-top: 14px; font: 700 14px Arial, sans-serif; letter-spacing: 0; background: rgba(255,255,255,.95); color: #101010; border-radius: 8px; overflow: hidden; }
+    .db-table th, .db-table td { padding: 9px 10px; border-bottom: 1px solid rgba(0,0,0,.12); text-align: left; }
+    .db-table th { background: #0b3a14; color: white; text-transform: uppercase; }
+    .db-table button { padding: 6px 10px; font-size: 12px; }
+    button.danger { background: linear-gradient(180deg, #7d1f1f, #350808); }
+    @media print { .actions, .hint { display: none; } body { background: #061006; } .app { width: 100%; padding: 10mm; } select { appearance: none; } }
+    @media (max-width: 800px) { .top { grid-template-columns: 1fr; text-align: center; } .crest { margin: 0 auto; } .match-fields { grid-template-columns: 1fr; } .split-header, .row { grid-template-columns: 56px 1fr; } .split-header h2.sponsor-title, .row .sponsor { grid-column: 2; } .split-header h2.sponsor-title { border-left: 0; border-top: 2px solid var(--line); } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="top">
+      <div class="crest" title="Add logo image as logo.png in the same folder">
+        <img src="logo.png" alt="Waunarlwydd Galaxy logo" onerror="this.remove(); document.querySelector('.fallback').style.display='block';" />
+        <div class="fallback" style="display:none">WAUNARLWYDD<br>GALAXY</div>
+      </div>
+      <h1>Waunarlwydd <span>Galaxy</span></h1>
+    </section>
+    <section class="match-fields">
+      <div class="field"><label for="fixture">Opponent</label><select id="fixture"></select></div>
+      <div class="field"><label for="date">Date</label><input id="date" type="text" readonly /></div>
+      <div class="field"><label for="ko">KO</label><input id="ko" type="text" readonly /></div>
+    </section>
+    <section class="panel"><div class="split-header"><div class="blank"></div><h2>Starting XI</h2><h2 class="sponsor-title">Sponsored By</h2></div><div id="startingRows"></div></section>
+    <section class="panel"><div class="split-header"><div class="blank"></div><h2>Substitutes</h2><h2 class="sponsor-title">Sponsored By</h2></div><div id="subRows"></div></section>
+
+    <section class="panel database">
+      <h2>Player Database</h2>
+      <div class="db-grid">
+        <div class="db-field"><label for="playerName">Player name</label><input id="playerName" type="text" placeholder="e.g. Joe Bloggs" /></div>
+        <div class="db-field"><label for="playerPosition">Position</label><input id="playerPosition" type="text" placeholder="e.g. Defender" /></div>
+        <div class="db-field"><label for="playerSponsor">Sponsor</label><input id="playerSponsor" type="text" placeholder="e.g. Local Business" /></div>
+        <button type="button" onclick="addPlayer()">Add player</button>
+      </div>
+      <table class="db-table" aria-label="Player database">
+        <thead><tr><th>Player</th><th>Position</th><th>Sponsor</th><th>Action</th></tr></thead>
+        <tbody id="playerTable"></tbody>
+      </table>
+      <p class="hint">Players are saved in this browser using local storage. Adding or deleting a player updates every player dropdown. Selecting a player will auto-fill their sponsor where available.</p>
+    </section>
+    <div class="actions"><button onclick="window.print()">Print / Save as PDF</button><button class="secondary" onclick="exportPlayers()">Export player database</button><button class="secondary" onclick="document.getElementById('importFile').click()">Import player database</button><button class="secondary" onclick="clearSelections()">Clear selections</button></div>
+    <input id="importFile" type="file" accept="application/json" style="display:none" onchange="importPlayers(event)" />
+    <p class="hint">To use the crest, save the club logo as <strong>logo.png</strong> in the same folder as this HTML file.</p>
+  </main>
+  <script>
+    const fixtures = [{"md":1,"date":"Wednesday 5th August 2026","fixture":"Rockspur v Waunarlwydd Galaxy","ko":"7.15pm"},{"md":2,"date":"Saturday 8th August 2026","fixture":"Waunarlwydd Galaxy v Pontarddulais Town","ko":"2.30pm"},{"md":3,"date":"Tuesday 11th August 2026","fixture":"Waunarlwydd Galaxy v AFC Glais","ko":"6.30pm"},{"md":4,"date":"Saturday 15th August 2026","fixture":"Waunarlwydd Galaxy v Cwmamman United","ko":"2.30pm"},{"md":5,"date":"Tuesday 18th August 2026","fixture":"Llandarcy v Waunarlwydd Galaxy","ko":"7pm"},{"md":6,"date":"Tuesday 25th August 2026","fixture":"Seaside v Waunarlwydd Galaxy","ko":"6.15pm"},{"md":7,"date":"Saturday 29th August 2026","fixture":"Waunarlwydd Galaxy v CKSV","ko":"2.30pm"},{"md":8,"date":"Saturday 12th September 2026","fixture":"Giants Grave v Waunarlwydd Galaxy","ko":"2.30pm"},{"md":9,"date":"Saturday 19th September 2026","fixture":"South Gower v Waunarlwydd Galaxy","ko":"2.30pm"},{"md":10,"date":"Saturday 26th September 2026","fixture":"Pontlliw v Waunarlwydd Galaxy","ko":"2.30pm"},{"md":11,"date":"Friday 9th October 2026","fixture":"Garden Village v Waunarlwydd Galaxy","ko":"7pm"},{"md":12,"date":"Saturday 17th October 2026","fixture":"Waunarlwydd Galaxy v Penlan","ko":"2.30pm"},{"md":13,"date":"Saturday 31st October 2026","fixture":"Ynystawe Athletic v Waunarlwydd Galaxy","ko":"2pm"},{"md":14,"date":"Saturday 14th November 2026","fixture":"Waunarlwydd Galaxy v Llangennech","ko":"2pm"},{"md":15,"date":"Saturday 21st November 2026","fixture":"Waunarlwydd Galaxy v West End","ko":"2pm"},{"md":16,"date":"Saturday 28th November 2026","fixture":"Waunarlwydd Galaxy v Rockspur","ko":"2pm"},{"md":17,"date":"Saturday 12th December 2026","fixture":"Pontarddulais Town v Waunarlwydd Galaxy","ko":"2pm"},{"md":18,"date":"Saturday 19th December 2026","fixture":"Waunarlwydd Galaxy v Garden Village","ko":"2pm"},{"md":19,"date":"Saturday 9th January 2027","fixture":"AFC Glais v Waunarlwydd Galaxy","ko":"1.30pm"},{"md":20,"date":"Friday 15th January 2027","fixture":"Cwmamman United v Waunarlwydd Galaxy","ko":"7.15pm"},{"md":21,"date":"Saturday 23rd January 2027","fixture":"Waunarlwydd Galaxy v Seaside","ko":"2pm"},{"md":22,"date":"Saturday 30th January 2027","fixture":"CKSV v Waunarlwydd Galaxy","ko":"2pm"},{"md":23,"date":"Saturday 13th February 2027","fixture":"Waunarlwydd Galaxy v South Gower","ko":"2pm"},{"md":24,"date":"Saturday 20th February 2027","fixture":"Waunarlwydd Galaxy v Giants Grave","ko":"2pm"},{"md":25,"date":"Saturday 13th March 2027","fixture":"Waunarlwydd Galaxy v Pontlliw","ko":"2.30pm"},{"md":26,"date":"Saturday 20th March 2027","fixture":"Waunarlwydd Galaxy v Llandarcy","ko":"2.30pm"},{"md":27,"date":"Friday 26th March 2027","fixture":"Penlan v Waunarlwydd Galaxy","ko":"7.15pm"},{"md":28,"date":"Saturday 3rd April 2027","fixture":"Waunarlwydd Galaxy v Ynystawe Athletic","ko":"2.30pm"},{"md":29,"date":"Saturday 10th April 2027","fixture":"Llangennech v Waunarlwydd Galaxy","ko":"2.30pm"},{"md":30,"date":"Saturday 17th April 2027","fixture":"West End v Waunarlwydd Galaxy","ko":"2.30pm"}];
+    const STORAGE_KEY = 'waunarlwyddGalaxyPlayers';
+    let players = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    if (!players.length) { players = [{ name: 'Player Name', position: '', sponsor: 'Sponsor' }]; savePlayers(); }
+    function savePlayers() { localStorage.setItem(STORAGE_KEY, JSON.stringify(players)); }
+    const fixtureSelect = document.getElementById('fixture');
+    const dateInput = document.getElementById('date');
+    const koInput = document.getElementById('ko');
+    fixtures.forEach((game, index) => { const option = document.createElement('option'); option.value = index; option.textContent = 'MD' + game.md + ' - ' + game.fixture; fixtureSelect.appendChild(option); });
+    function updateFixture() { const game = fixtures[fixtureSelect.value]; dateInput.value = game.date; koInput.value = game.ko; }
+    fixtureSelect.addEventListener('change', updateFixture); updateFixture();
+    function escapeHtml(value) { return String(value).replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char])); }
+    function playerOptionText(player) { return player.position ? player.name + ' - ' + player.position : player.name; }
+    function createPlayerOptions() { return '<option value="">Player Name</option>' + players.filter(player => player.name && player.name !== 'Player Name').sort((a,b) => a.name.localeCompare(b.name)).map(player => '<option value="' + escapeHtml(player.name) + '">' + escapeHtml(playerOptionText(player)) + '</option>').join(''); }
+    function createSponsorOptions() { const sponsors = [...new Set(players.map(player => player.sponsor).filter(Boolean))].sort(); return '<option value="">Sponsor</option>' + sponsors.map(sponsor => '<option value="' + escapeHtml(sponsor) + '">' + escapeHtml(sponsor) + '</option>').join(''); }
+    function makeRow(number) { const row = document.createElement('div'); row.className = 'row'; row.innerHTML = '<div class="num">' + number + '</div><select class="player-select" aria-label="Player ' + number + '">' + createPlayerOptions() + '</select><select class="sponsor sponsor-select" aria-label="Sponsor ' + number + '">' + createSponsorOptions() + '</select>'; const playerSelect = row.querySelector('.player-select'); const sponsorSelect = row.querySelector('.sponsor-select'); playerSelect.addEventListener('change', () => { const selected = players.find(player => player.name === playerSelect.value); if (selected && selected.sponsor) sponsorSelect.value = selected.sponsor; }); return row; }
+    function renderRows() { document.getElementById('startingRows').innerHTML = ''; document.getElementById('subRows').innerHTML = ''; for (let i = 1; i <= 11; i++) document.getElementById('startingRows').appendChild(makeRow(i)); for (let i = 12; i <= 16; i++) document.getElementById('subRows').appendChild(makeRow(i)); }
+    function renderPlayerTable() { const table = document.getElementById('playerTable'); table.innerHTML = ''; players.filter(player => player.name && player.name !== 'Player Name').sort((a,b) => a.name.localeCompare(b.name)).forEach(player => { const tr = document.createElement('tr'); tr.innerHTML = '<td>' + escapeHtml(player.name) + '</td><td>' + escapeHtml(player.position || '') + '</td><td>' + escapeHtml(player.sponsor || '') + '</td><td><button class="danger" type="button" onclick="deletePlayer(\'' + encodeURIComponent(player.name) + '\')">Delete</button></td>'; table.appendChild(tr); }); }
+    function addPlayer() { const name = document.getElementById('playerName').value.trim(); const position = document.getElementById('playerPosition').value.trim(); const sponsor = document.getElementById('playerSponsor').value.trim(); if (!name) return alert('Please enter a player name.'); const existing = players.find(player => player.name.toLowerCase() === name.toLowerCase()); if (existing) { existing.name = name; existing.position = position; existing.sponsor = sponsor; } else { players.push({ name, position, sponsor }); } savePlayers(); document.getElementById('playerName').value = ''; document.getElementById('playerPosition').value = ''; document.getElementById('playerSponsor').value = ''; renderRows(); renderPlayerTable(); }
+    function deletePlayer(encodedName) { const name = decodeURIComponent(encodedName); players = players.filter(player => player.name !== name); savePlayers(); renderRows(); renderPlayerTable(); }
+    function clearSelections() { fixtureSelect.selectedIndex = 0; updateFixture(); document.querySelectorAll('.row select').forEach(select => select.selectedIndex = 0); }
+    function exportPlayers() { const blob = new Blob([JSON.stringify(players.filter(player => player.name !== 'Player Name'), null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'waunarlwydd-galaxy-player-database.json'; link.click(); URL.revokeObjectURL(url); }
+    function importPlayers(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const imported = JSON.parse(reader.result); if (!Array.isArray(imported)) throw new Error('Invalid file'); players = [{ name: 'Player Name', position: '', sponsor: 'Sponsor' }, ...imported.filter(player => player.name)]; savePlayers(); renderRows(); renderPlayerTable(); } catch (error) { alert('That player database file could not be imported.'); } }; reader.readAsText(file); event.target.value = ''; }
+    renderRows();
+    renderPlayerTable();
+  </script>
+</body>
+</html>
