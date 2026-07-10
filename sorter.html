@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waunarlwydd Galaxy - Picture Sorter & Tagger</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
+
+        :root {
+            --dark-bg: #1a1d20;
+            --panel-bg: #22262a;
+            --accent-green: #2db92d;
+            --text-light: #ffffff;
+            --text-muted: #a0a5a1;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2d3238;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        h1 { margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .setup-bar { display: flex; gap: 15px; align-items: center; }
+
+        .btn {
+            background-color: var(--accent-green);
+            color: black;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        .btn-secondary {
+            background-color: #3a4149;
+            color: white;
+        }
+        .btn:hover { opacity: 0.9; }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ff4d4d;
+            display: inline-block;
+        }
+        .status-dot.connected { background-color: var(--accent-green); }
+
+        .workspace {
+            display: flex;
+            gap: 25px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Left Side: Image Viewer */
+        .viewer-panel {
+            flex: 1.5;
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            border: 1px solid #2d3238;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            min-height: 0;
+        }
+
+        .img-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .img-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 6px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .queue-counter {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.6);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid #3a4149;
+        }
+
+        /* Right Side: Tagger Panel */
+        .tagger-panel {
+            flex: 1;
+            max-width: 400px;
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            border: 1px solid #2d3238;
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tagger-panel h2 {
+            margin-top: 0;
+            font-size: 16px;
+            text-transform: uppercase;
+            color: var(--accent-green);
+            border-bottom: 1px solid #2d3238;
+            padding-bottom: 8px;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            margin: 15px 0 6px 0;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        select, input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #3a4149;
+            background-color: #16191c;
+            color: white;
+            font-size: 14px;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .action-box {
+            margin-top: auto;
+            background: #16191c;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #3a4149;
+        }
+
+        .target-preview {
+            font-size: 13px;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        .target-preview span {
+            color: var(--accent-green);
+            font-weight: 700;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 15px;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .skip-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px;
+            background: transparent;
+            color: #ff4d4d;
+            border: 1px solid #ff4d4d;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 6px;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+        .skip-btn:hover { background: rgba(255,77,77,0.1); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Picture Sorter & Tagger</h1>
+        <div class="setup-bar">
+            <div>
+                <span id="folderStatusDot" class="status-dot"></span>
+                <span id="folderStatusText" style="font-size: 12px; font-weight:700; color:var(--text-muted);">Images Folder Disconnected</span>
+            </div>
+            <button class="btn btn-secondary" onclick="connectImagesFolder()">Link Images Folder</button>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <!-- Visualizer view window -->
+        <div class="viewer-panel">
+            <div id="queueCounter" class="queue-counter" style="display: none;">Remaining: 0/0</div>
+            <div class="img-container" id="imgContainer">
+                <div class="placeholder-text">
+                    <p>1. Link your main "Images" folder above.</p>
+                    <p>2. Select unprocessed pictures below to load the queue.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls panel sidebar -->
+        <div class="tagger-panel">
+            <h2>Source Intake</h2>
+            <label for="imageLoader">Load Unsorted Pictures:</label>
+            <input type="file" id="imageLoader" multiple accept="image/*">
+
+            <label for="playerSelect" style="margin-top: 25px;">Assign To Player:</label>
+            <select id="playerSelect" disabled>
+                <option value="">-- Link Images Folder First --</option>
+            </select>
+
+            <div class="action-box">
+                <div class="target-preview">
+                    <div>Folder target: <span id="targetFolder">None</span></div>
+                    <div>Will save as: <span id="targetFilename">None</span></div>
+                </div>
+                <button id="saveBtn" class="btn btn-action" disabled onclick="processAndSaveCurrentPhoto()">File & Save Picture</button>
+                <button id="skipBtn" class="skip-btn" style="display: none;" onclick="skipCurrentPhoto()">Skip Picture</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let playerData = [];
+        let imageQueue = [];
+        let currentQueueIndex = 0;
+        let imagesFolderHandle = null;
+
+        window.onload = async function() {
+            try {
+                const response = await fetch('Player List.csv?v=' + new Date().getTime());
+                if (!response.ok) throw new Error("Could not load CSV file.");
+                const csvText = await response.text();
+                parseCSV(csvText);
+            } catch (error) {
+                alert("Could not automatically read 'Player List.csv'. Make sure this script is running out of your main directory folder root.");
+                console.error(error);
+            }
+        };
+
+        function parseCSV(text) {
+            const cleanText = text.replace(/^\uFEFF/, "").replace(/\r/g, "");
+            const lines = cleanText.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) return;
+
+            const separator = cleanText.includes(';') ? ';' : ',';
+            const headers = lines[0].split(separator).map(h => h.trim().toLowerCase().replace(/[^a-z0-9 ]/g, ''));
+            
+            let refIndex = headers.indexOf('ref');
+            let lineUpNameIndex = headers.indexOf('line up name');
+            if (refIndex === -1) refIndex = 0; 
+            if (lineUpNameIndex === -1) lineUpNameIndex = 1; 
+
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(separator);
+                if (cols.length > Math.max(refIndex, lineUpNameIndex)) {
+                    const rawRef = cols[refIndex].trim();
+                    const rawName = cols[lineUpNameIndex].trim();
+                    if (rawRef && rawName) {
+                        playerData.push({ ref: rawRef, lineUpName: rawName });
+                    }
+                }
+            }
+        }
+
+        // Connect to the local parent 'Images' directory folder mapping structure
+        async function connectImagesFolder() {
+            try {
+                imagesFolderHandle = await window.showDirectoryPicker({
+                    mode: 'readwrite'
+                });
+                
+                document.getElementById('folderStatusDot').classList.add('connected');
+                document.getElementById('folderStatusText').textContent = "Images Folder Linked Safely";
+                document.getElementById('folderStatusText').style.color = "var(--accent-green)";
+                
+                populateDropdown();
+            } catch (err) {
+                console.error(err);
+                alert("Permission to folder directory was rejected or closed out.");
+            }
+        }
+
+        function populateDropdown() {
+            const select = document.getElementById('playerSelect');
+            select.disabled = false;
+            select.innerHTML = '<option value="">-- Choose Target Player --</option>';
+            
+            playerData.forEach(player => {
+                const option = document.createElement('option');
+                option.value = player.ref;
+                option.textContent = `${player.lineUpName} (${player.ref})`;
+                select.appendChild(option);
+            });
+            
+            select.addEventListener('change', calculateNextSequenceFile);
+        }
+
+        // Intake photo load queue file listener
+        document.getElementById('imageLoader').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            if(files.length === 0) return;
+
+            imageQueue = files;
+            currentQueueIndex = 0;
+            displayCurrentQueuePhoto();
+        });
+
+        function displayCurrentQueuePhoto() {
+            const container = document.getElementById('imgContainer');
+            const counter = document.getElementById('queueCounter');
+            const skipBtn = document.getElementById('skipBtn');
+
+            if(currentQueueIndex >= imageQueue.length) {
+                container.innerHTML = '<div class="placeholder-text"><p style="color:var(--accent-green)">All done! Queue is completely clear.</p></div>';
+                counter.style.display = "none";
+                skipBtn.style.display = "none";
+                document.getElementById('saveBtn').disabled = true;
+                return;
+            }
+
+            counter.style.display = "block";
+            counter.textContent = `Remaining: ${currentQueueIndex + 1} / ${imageQueue.length}`;
+            skipBtn.style.display = "block";
+
+            const file = imageQueue[currentQueueIndex];
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                container.innerHTML = `<img src="${event.target.result}" alt="Current Target Queue Image">`;
+                calculateNextSequenceFile();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Check inside selected player's directory and detect highest increment index sequence
+        async function calculateNextSequenceFile() {
+            const selectedRef = document.getElementById('playerSelect').value;
+            const saveBtn = document.getElementById('saveBtn');
+            
+            if(!selectedRef || currentQueueIndex >= imageQueue.length) {
+                document.getElementById('targetFolder').textContent = "None";
+                document.getElementById('targetFilename').textContent = "None";
+                saveBtn.disabled = true;
+                return;
+            }
+
+            const currentFile = imageQueue[currentQueueIndex];
+            const originalExtension = currentFile.name.substring(currentFile.name.lastIndexOf('.')).toLowerCase() || '.jpg';
+
+            document.getElementById('targetFolder').textContent = `Images/${selectedRef}/`;
+            saveBtn.disabled = false;
+
+            if (!imagesFolderHandle) {
+                // Fallback UI layout info representation if not in standard security environment setup loop
+                document.getElementById('targetFilename').textContent = `01${originalExtension} (Download Prompt Fallback)`;
+                return;
+            }
+
+            try {
+                let playerDirHandle;
+                try {
+                    playerDirHandle = await imagesFolderHandle.getDirectoryHandle(selectedRef, { create: true });
+                } catch(e) {
+                    // Create if missing entirely
+                    playerDirHandle = await imagesFolderHandle.getDirectoryHandle(selectedRef, { create: true });
+                }
+
+                let highestNum = 0;
+                for await (const entry of playerDirHandle.values()) {
+                    if (entry.kind === 'file') {
+                        const nameWithoutExt = entry.name.substring(0, entry.name.lastIndexOf('.'));
+                        const numValue = parseInt(nameWithoutExt, 10);
+                        if (!isNaN(numValue) && numValue > highestNum) {
+                            highestNum = numValue;
+                        }
+                    }
+                }
+
+                const nextNum = highestNum + 1;
+                const paddedFilename = String(nextNum).padStart(2, '0') + originalExtension;
+                document.getElementById('targetFilename').textContent = paddedFilename;
+
+            } catch (err) {
+                console.error("Directory layout scanning error logic failed:", err);
+                document.getElementById('targetFilename').textContent = "01" + originalExtension;
+            }
+        }
+
+        async function processAndSaveCurrentPhoto() {
+            const selectedRef = document.getElementById('playerSelect').value;
+            if(!selectedRef || currentQueueIndex >= imageQueue.length) return;
+
+            const file = imageQueue[currentQueueIndex];
+            const targetFilename = document.getElementById('targetFilename').textContent;
+
+            if (imagesFolderHandle) {
+                try {
+                    // Modern Auto File Direct to Folder logic injection
+                    const playerDirHandle = await imagesFolderHandle.getDirectoryHandle(selectedRef, { create: true });
+                    const newFileHandle = await playerDirHandle.getFileHandle(targetFilename, { create: true });
+                    const writableStream = await newFileHandle.createWritable();
+                    
+                    await writableStream.write(file);
+                    await writableStream.close();
+                    
+                    advanceQueue();
+                } catch (err) {
+                    console.error("Failed to write straight to directory. Falling back to browser standard download window trigger.", err);
+                    fallbackDownload(file, targetFilename);
+                }
+            } else {
+                fallbackDownload(file, targetFilename);
+            }
+        }
+
+        function fallbackDownload(file, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = URL.createObjectURL(file);
+            link.click();
+            advanceQueue();
+        }
+
+        function skipCurrentPhoto() {
+            advanceQueue();
+        }
+
+        function advanceQueue() {
+            currentQueueIndex++;
+            displayCurrentQueuePhoto();
+        }
+    </script>
+</body>
+</html>
