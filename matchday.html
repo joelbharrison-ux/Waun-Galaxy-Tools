@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waunarlwydd Galaxy - Match Day Engine</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
+
+        :root {
+            --dark-bg: #1a1d20;
+            --panel-bg: #22262a;
+            --accent-green: #2db92d;
+            --text-light: #ffffff;
+            --text-muted: #a0a5a1;
+            --canvas-bg: #08090a;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            margin: 0;
+            padding: 25px;
+            box-sizing: border-box;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2d3238;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        h1 { margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .btn {
+            background-color: var(--accent-green);
+            color: black;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 12px;
+            text-decoration: none;
+        }
+        .btn-secondary { background-color: #3a4149; color: white; }
+        .btn:hover { opacity: 0.9; }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 25px;
+        }
+
+        /* Setup Left Sidebar */
+        .setup-sidebar {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            border: 1px solid #2d3238;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .setup-sidebar h2 {
+            margin-top: 0;
+            font-size: 16px;
+            text-transform: uppercase;
+            color: var(--accent-green);
+            border-bottom: 1px solid #2d3238;
+            padding-bottom: 8px;
+        }
+
+        .lineup-selectors {
+            max-height: 50vh;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding-right: 5px;
+        }
+
+        .selector-row {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .selector-row span {
+            font-size: 12px;
+            font-weight: 700;
+            width: 30px;
+            color: var(--text-muted);
+        }
+
+        select, input {
+            flex: 1;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #3a4149;
+            background-color: #16191c;
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+        }
+
+        /* Right Side Production Zone */
+        .production-zone {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .dashboard-section {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            border: 1px solid #2d3238;
+            padding: 25px;
+        }
+
+        .dashboard-section h2 {
+            margin-top: 0;
+            font-size: 18px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #2d3238;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Graphic Canvas Block Patterns */
+        .canvas-container {
+            display: flex;
+            gap: 25px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .poster-canvas {
+            width: 500px;
+            height: 500px;
+            background-color: var(--canvas-bg);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Graphic Templates Content Design rules */
+        .canvas-header {
+            background: linear-gradient(180deg, #0d2b11 0%, transparent 100%);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .canvas-header img { height: 60px; object-fit: contain; }
+        .canvas-header h3 { margin: 0; font-size: 24px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+
+        .canvas-body { padding: 0 30px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        
+        /* Lineup Specific Layout styling */
+        .lineup-display-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 20px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .canvas-footer {
+            background-color: #000;
+            padding: 15px;
+            text-align: center;
+            border-top: 3px solid var(--accent-green);
+        }
+
+        .sponsor-banner-box {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+        .sponsor-name { color: var(--accent-green); font-size: 14px; margin-top: 2px; }
+        .sponsor-avail { color: #ff4d4d; font-size: 12px; letter-spacing: 1.5px; font-weight: 900; }
+
+        /* Dynamic Events Generator Control Row */
+        .event-triggers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .event-card {
+            background: #16191c;
+            border: 1px solid #3a4149;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .event-card h4 { margin: 0 0 10px 0; font-size: 13px; text-transform: uppercase; color: var(--accent-green); }
+        .event-card .field-group { margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
+        .event-card label { font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); }
+
+        /* Event Poster Visuals Layout configurations */
+        .event-title-hero {
+            font-size: 56px;
+            font-weight: 900;
+            text-transform: uppercase;
+            line-height: 0.95;
+            color: white;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            margin-bottom: 15px;
+        }
+        .event-player-name {
+            font-size: 28px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: var(--accent-green);
+        }
+        .event-sub-details {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-top: 5px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Match Day Media Engine</h1>
+        <a href="index.html" class="btn btn-secondary">← Back to Dashboard</a>
+    </header>
+
+    <div class="workspace">
+        <!-- Roster Selection Column -->
+        <div class="setup-sidebar">
+            <h2>Match Setup</h2>
+            <div class="field-group" style="margin-bottom: 15px;">
+                <label style="font-size: 10px; text-transform: uppercase; font-weight: 700;">Opponent Name:</label>
+                <input type="text" id="opponentInput" value="Opponent FC" oninput="updateLineupPoster()">
+            </div>
+            
+            <h2 style="margin-top: 20px;">Starting Lineup</h2>
+            <div class="lineup-selectors" id="lineupSelectorsContainer">
+                <!-- Dropdowns inject here -->
+            </div>
+            <button class="btn" style="width: 100%;" onclick="lockAndSyncLineup()">Lock Squad & Sync Engine</button>
+        </div>
+
+        <!-- Interactive Production View Area -->
+        <div class="production-zone">
+            
+            <!-- SECTION 1: Lineup Poster Output Area -->
+            <div class="dashboard-section">
+                <h2>1. Team Lineup Poster</h2>
+                <div class="canvas-container">
+                    <div class="poster-canvas" id="lineupCanvas">
+                        <div class="canvas-header">
+                            <div>
+                                <h3 style="color: var(--accent-green);">MATCH DAY</h3>
+                                <div style="font-size: 11px; font-weight: 700;" id="vsOpponent">VS OPPONENT FC</div>
+                            </div>
+                            <img src="WaunG.png" alt="Club Logo">
+                        </div>
+                        <div class="canvas-body">
+                            <div class="lineup-display-list" id="lineupViewList">
+                                <div>1. Empty Slot</div><div>2. Empty Slot</div>
+                                <div>3. Empty Slot</div><div>4. Empty Slot</div>
+                                <div>5. Empty Slot</div><div>6. Empty Slot</div>
+                                <div>7. Empty Slot</div><div>8. Empty Slot</div>
+                                <div>9. Empty Slot</div><div>10. Empty Slot</div>
+                                <div>11. Empty Slot</div>
+                            </div>
+                        </div>
+                        <div class="canvas-footer">
+                            <div class="sponsor-banner-box">
+                                <div style="color: var(--text-muted); font-size: 9px;">Team Match Day Powered By</div>
+                                <div class="sponsor-name" id="lineupSponsorText">Sponsorship Available</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="downloadGraphic('lineupCanvas', 'Lineup_Poster')">Download Lineup</button>
+                </div>
+            </div>
+
+            <!-- SECTION 2: Dynamic Live Action Graphics Trigger Panel -->
+            <div class="dashboard-section">
+                <h2>2. Live Match Alert Generators</h2>
+                
+                <div class="event-triggers">
+                    <!-- GOAL TRIGGER CARD -->
+                    <div class="event-card">
+                        <h4>Goal Scored</h4>
+                        <div class="field-group">
+                            <label>Scorer:</label>
+                            <select id="goalScorerSelect" class="active-squad-select"><option>-- Lock Squad First --</option></select>
+                        </div>
+                        <div class="field-group">
+                            <label>Assist By:</label>
+                            <select id="goalAssistSelect" class="active-squad-select"><option>-- Lock Squad First --</option></select>
+                        </div>
+                        <button class="btn" style="width: 100%; margin-top: 10px; font-size: 11px;" onclick="generateMatchEvent('GOAL')">Update Goal Graphic</button>
+                    </div>
+
+                    <!-- SUB TRIGGER CARD -->
+                    <div class="event-card">
+                        <h4>Substitution</h4>
+                        <div class="field-group">
+                            <label>Player Off:</label>
+                            <select id="subOffSelect" class="active-squad-select"><option>-- Lock Squad First --</option></select>
+                        </div>
+                        <div class="field-group">
+                            <label>Player On:</label>
+                            <select id="subOnSelect" class="all-players-select"><option>-- Lock Squad First --</option></select>
+                        </div>
+                        <button class="btn" style="width: 100%; margin-top: 10px; font-size: 11px;" onclick="generateMatchEvent('SUB')">Update Sub Graphic</button>
+                    </div>
+
+                    <!-- PENALTY SAVE CARD -->
+                    <div class="event-card">
+                        <h4>Penalty Save</h4>
+                        <div class="field-group">
+                            <label>Goalkeeper:</label>
+                            <select id="gkSelect" class="active-squad-select"><option>-- Lock Squad First --</option></select>
+                        </div>
+                        <button class="btn" style="width: 100%; margin-top: 37px; font-size: 11px;" onclick="generateMatchEvent('SAVE')">Update Save Graphic</button>
+                    </div>
+                </div>
+
+                <!-- Live Alerts Canvas Visualizer block -->
+                <div class="canvas-container">
+                    <div class="poster-canvas" id="eventCanvas">
+                        <div class="canvas-header">
+                            <h3 id="eventHeaderTitle" style="color: var(--accent-green);">MATCH ALERT</h3>
+                            <img src="WaunG.png" alt="Club Logo">
+                        </div>
+                        <div class="canvas-body" style="justify-content: center; align-items: center; text-align: center;">
+                            <div class="event-title-hero" id="eventHeroText">GOAL!</div>
+                            <div class="event-player-name" id="eventPlayerText">PLAYER NAME</div>
+                            <div class="event-sub-details" id="eventDetailsText">Assist: Dynamic Player</div>
+                        </div>
+                        <div class="canvas-footer" id="eventSponsorFooter">
+                            <div class="sponsor-banner-box">
+                                <div style="color: var(--text-muted); font-size: 9px;" id="eventSponsorLabel">Player Sponsored By</div>
+                                <div class="sponsor-name" id="eventSponsorName">Sponsorship Available</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="downloadGraphic('eventCanvas', 'Match_Event_Alert')">Download Event Alert</button>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let allPlayers = [];
+        let activeLineup = [];
+
+        window.onload = async function() {
+            try {
+                const response = await fetch('Player List.csv?v=' + new Date().getTime());
+                if (!response.ok) throw new Error("Could not read CSV dataset.");
+                const csvText = await response.text();
+                parseCSV(csvText);
+                buildSelectors();
+            } catch (err) {
+                alert("Error loading player inventory data list.");
+                console.error(err);
+            }
+        };
+
+        function parseCSV(text) {
+            const cleanText = text.replace(/^\uFEFF/, "").replace(/\r/g, "");
+            const lines = cleanText.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) return;
+
+            const separator = cleanText.includes(';') ? ';' : ',';
+            const headers = lines[0].split(separator).map(h => h.trim().toLowerCase().replace(/[^a-z0-9 ]/g, ''));
+            
+            let refIndex = headers.indexOf('ref');
+            let nameIndex = headers.indexOf('line up name');
+            let sponsorIndex = headers.indexOf('sponsor');
+
+            if (refIndex === -1) refIndex = 0;
+            if (nameIndex === -1) nameIndex = 1;
+
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(separator);
+                if (cols.length > Math.max(refIndex, nameIndex)) {
+                    allPlayers.push({
+                        ref: cols[refIndex] ? cols[refIndex].trim() : '',
+                        name: cols[nameIndex] ? cols[nameIndex].trim() : '',
+                        sponsor: (sponsorIndex !== -1 && cols[sponsorIndex]) ? cols[sponsorIndex].trim() : ''
+                    });
+                }
+            }
+        }
+
+        function buildSelectors() {
+            const container = document.getElementById('lineupSelectorsContainer');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 11; i++) {
+                const row = document.createElement('div');
+                row.className = 'selector-row';
+                row.innerHTML = `<span>#${i}</span><select id="pos_${i}" onchange="updateLineupPoster()"><option value="">-- Choose Player --</option></select>`;
+                container.appendChild(row);
+
+                const select = document.getElementById(`pos_${i}`);
+                allPlayers.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.ref;
+                    opt.textContent = p.name;
+                    select.appendChild(opt);
+                });
+            }
+
+            // Populate all-player lists right away for substitutes selection arrays
+            const subOnSelect = document.getElementById('subOnSelect');
+            subOnSelect.innerHTML = '<option value="">-- Select Incoming Player --</option>';
+            allPlayers.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.ref;
+                opt.textContent = p.name;
+                subOnSelect.appendChild(opt);
+            });
+        }
+
+        function updateLineupPoster() {
+            const oppName = document.getElementById('opponentInput').value || 'Opponent FC';
+            document.getElementById('vsOpponent').textContent = `VS ${oppName.toUpperCase()}`;
+
+            const listView = document.getElementById('lineupViewList');
+            listView.innerHTML = '';
+
+            let matchedSponsors = [];
+
+            for (let i = 1; i <= 11; i++) {
+                const val = document.getElementById(`pos_${i}`).value;
+                const player = allPlayers.find(p => p.ref === val);
+                const nameDisplay = player ? player.name : 'Empty Slot';
+                
+                const item = document.createElement('div');
+                item.textContent = `${i}. ${nameDisplay}`;
+                listView.appendChild(item);
+
+                if (player && player.sponsor && player.sponsor.toLowerCase() !== 'none') {
+                    matchedSponsors.push(player.sponsor);
+                }
+            }
+
+            // Lineup overall match sponsor loop cycle display logic
+            const lineupSponsorText = document.getElementById('lineupSponsorText');
+            if(matchedSponsors.length > 0) {
+                lineupSponsorText.innerHTML = matchedSponsors.slice(0, 2).join(' & ');
+                lineupSponsorText.className = "sponsor-name";
+            } else {
+                lineupSponsorText.innerHTML = "SPONSORSHIP AVAILABLE";
+                lineupSponsorText.className = "sponsor-avail";
+            }
+        }
+
+        // Lock in data snapshot storage to build active fields array context parameters
+        function lockAndSyncLineup() {
+            activeLineup = [];
+            for (let i = 1; i <= 11; i++) {
+                const val = document.getElementById(`pos_${i}`).value;
+                const player = allPlayers.find(p => p.ref === val);
+                if (player) activeLineup.push(player);
+            }
+
+            if (activeLineup.length === 0) {
+                alert("Please select at least one player before locking the squad structure lineup.");
+                return;
+            }
+
+            // Repopulate dynamic drop select layouts variables
+            const dropdowns = document.querySelectorAll('.active-squad-select');
+            dropdowns.forEach(select => {
+                const currentId = select.id;
+                select.innerHTML = '';
+                
+                if (currentId === 'goalAssistSelect') {
+                    select.innerHTML = '<option value="none">None (No Assist)</option>';
+                } else {
+                    select.innerHTML = '<option value="">-- Choose Player --</option>';
+                }
+
+                activeLineup.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.ref;
+                    opt.textContent = p.name;
+                    select.appendChild(opt);
+                });
+            });
+
+            alert(`Engine Sync Complete! ${activeLineup.length} active players tracked for matching live alerts.`);
+        }
+
+        // Event template graphic render parser generator engine configuration routing rules
+        function generateMatchEvent(type) {
+            const hero = document.getElementById('eventHeroText');
+            const pText = document.getElementById('eventPlayerText');
+            const dText = document.getElementById('eventDetailsText');
+            const header = document.getElementById('eventHeaderTitle');
+            
+            let focusPlayer = null;
+
+            if (type === 'GOAL') {
+                header.textContent = "MATCH UPDATE";
+                hero.textContent = "GOAL!";
+                const scorerRef = document.getElementById('goalScorerSelect').value;
+                const assistRef = document.getElementById('goalAssistSelect').value;
+                
+                focusPlayer = activeLineup.find(p => p.ref === scorerRef);
+                pText.textContent = focusPlayer ? focusPlayer.name.toUpperCase() : "PLAYER NAME";
+
+                const assistPlayer = activeLineup.find(p => p.ref === assistRef);
+                dText.textContent = (assistPlayer && assistRef !== 'none') ? `Assist: ${assistPlayer.name}` : "";
+                
+            } else if (type === 'SUB') {
+                header.textContent = "TACTICAL CHANGE";
+                hero.textContent = "SUBSTITUTION";
+                const offRef = document.getElementById('subOffSelect').value;
+                const onRef = document.getElementById('subOnSelect').value;
+
+                focusPlayer = activeLineup.find(p => p.ref === offRef);
+                const playerOn = allPlayers.find(p => p.ref === onRef);
+
+                pText.textContent = playerOn ? `ON: ${playerOn.name.toUpperCase()}` : "PLAYER ON";
+                dText.textContent = focusPlayer ? `OFF: ${focusPlayer.name}` : "PLAYER OFF";
+
+                // For a sub, if the incoming player has a sponsor, prefer them down the line
+                if (playerOn && playerOn.sponsor) {
+                    focusPlayer = playerOn;
+                }
+
+            } else if (type === 'SAVE') {
+                header.textContent = "CRUCIAL MOMENT";
+                hero.textContent = "PENALTY SAVE!";
+                const gkRef = document.getElementById('gkSelect').value;
+
+                focusPlayer = activeLineup.find(p => p.ref === gkRef);
+                pText.textContent = focusPlayer ? focusPlayer.name.toUpperCase() : "GOALKEEPER";
+                dText.textContent = "KEEPING THE CLEAN SHEET";
+            }
+
+            // Handle the sponsor footprint mapping output calculations rule layer
+            const nameTarget = document.getElementById('eventSponsorName');
+            const labelTarget = document.getElementById('eventSponsorLabel');
+            
+            if (focusPlayer && focusPlayer.sponsor && focusPlayer.sponsor.toLowerCase() !== 'none') {
+                labelTarget.textContent = `${focusPlayer.name.toUpperCase()} SPONSORED BY`;
+                nameTarget.textContent = focusPlayer.sponsor;
+                nameTarget.className = "sponsor-name";
+            } else {
+                labelTarget.textContent = "PLAYER SPONSORSHIP AVAILABLE";
+                nameTarget.textContent = "CLICK TO INQUIRE";
+                nameTarget.className = "sponsor-avail";
+            }
+        }
+
+        function downloadGraphic(canvasId, nameString) {
+            const element = document.getElementById(canvasId);
+            window.scrollTo(0,0);
+            
+            html2canvas(element, {
+                useCORS: true,
+                scale: 2,
+                logging: false,
+                windowWidth: 500,
+                windowHeight: 500
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${nameString}_${new Date().getTime()}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
