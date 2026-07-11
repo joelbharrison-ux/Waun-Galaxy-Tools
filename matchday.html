@@ -198,6 +198,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
             z-index: 10;
         }
         .canvas-header img.prominent-logo { 
@@ -205,6 +206,8 @@
             width: auto;
             object-fit: contain; 
             filter: drop-shadow(0px 2px 8px rgba(0,0,0,0.7));
+            position: relative;
+            z-index: 11;
         }
         .canvas-header h3 { margin: 0; font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2; }
 
@@ -214,9 +217,15 @@
             display: grid; 
             grid-template-columns: 1.4fr 0.6fr; 
             align-items: center; 
+            position: relative;
             z-index: 10; 
             gap: 10px;
             overflow: hidden;
+        }
+
+        .canvas-body-alert-text-wrapper {
+            position: relative;
+            z-index: 15;
         }
         
         .lineup-single-column {
@@ -266,6 +275,7 @@
             justify-content: space-between;
             align-items: center;
             border-top: 3px solid var(--accent-green);
+            position: relative;
             z-index: 10;
         }
         .canvas-footer-meta {
@@ -584,12 +594,14 @@
                                 <img src="WaunG.png" alt="Club Logo" class="prominent-logo">
                             </div>
                             <div class="canvas-body" style="display:block; padding-top:60px; max-width: 65%;">
-                                <div class="event-title-hero" id="eventHeroText">GOAL!</div>
-                                <div class="event-player-name" id="eventPlayerText">PLAYER NAME</div>
-                                <div><div class="event-sub-details" id="eventDetailsText" style="margin-top:5px; font-weight:700; color:#d1d5db; font-size:11px; text-transform:uppercase;"></div></div>
+                                <div class="canvas-body-alert-text-wrapper">
+                                    <div class="event-title-hero" id="eventHeroText">GOAL!</div>
+                                    <div class="event-player-name" id="eventPlayerText">PLAYER NAME</div>
+                                    <div><div class="event-sub-details" id="eventDetailsText" style="margin-top:5px; font-weight:700; color:#d1d5db; font-size:11px; text-transform:uppercase;"></div></div>
+                                </div>
                             </div>
                             <div class="canvas-footer" id="eventSponsorFooter">
-                                <div class="sponsor-banner-box">
+                                <div class="sponsor-banner-box" style="position: relative; z-index: 15;">
                                     <div style="color: var(--text-muted); font-size: 8px;" id="eventSponsorLabel">Player Sponsored By</div>
                                     <div style="color: var(--sponsor-color-pick); font-weight:900; font-size:11px; text-transform:uppercase;" id="eventSponsorName">Sponsorship Available</div>
                                 </div>
@@ -837,7 +849,6 @@
                 subsBlock.style.display = 'block';
             }
 
-            // Adapt structural scale parameters based on number of subs to completely fit the height layout budget
             let starterFontClass = 'starter-item';
             let subFontClass = 'sub-item';
             
@@ -884,7 +895,6 @@
                 subCol.appendChild(row);
             }
 
-            // Dynamic Inline CSS scaling engine corrections injection
             const stylePatchId = 'dynamic-squad-fonts-patch';
             let stylePatch = document.getElementById(stylePatchId);
             if(!stylePatch) {
@@ -893,7 +903,6 @@
                 document.head.appendChild(stylePatch);
             }
             
-            // Recalculate font metrics relative to list item limits
             if (subCount >= 4) {
                 stylePatch.innerHTML = `
                     .starter-item.scaled-compact { font-size: 8.5px !important; margin-bottom: 0px; }
