@@ -15,6 +15,10 @@
             --text-light: #ffffff;
             --text-muted: #a0a5a1;
             --canvas-bg: #08090a;
+            
+            /* Custom Color Engine Defaults */
+            --player-color-pick: #ffffff;
+            --sponsor-color-pick: #2db92d;
         }
 
         body {
@@ -22,20 +26,24 @@
             background-color: var(--dark-bg);
             color: var(--text-light);
             margin: 0;
-            padding: 25px;
+            padding: 15px;
             box-sizing: border-box;
         }
 
         header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 12px;
             border-bottom: 2px solid #2d3238;
             padding-bottom: 15px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
+        }
+        @media(min-width: 768px) {
+            body { padding: 25px; }
+            header { flex-direction: row; justify-content: space-between; align-items: center; }
         }
 
-        h1 { margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 0.5px; }
+        h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
 
         .btn {
             background-color: var(--accent-green);
@@ -46,16 +54,20 @@
             font-weight: 700;
             cursor: pointer;
             text-transform: uppercase;
-            font-size: 12px;
+            font-size: 11px;
             text-decoration: none;
+            text-align: center;
         }
         .btn-secondary { background-color: #3a4149; color: white; }
         .btn:hover { opacity: 0.9; }
 
         .workspace {
             display: grid;
-            grid-template-columns: 380px 1fr;
+            grid-template-columns: 1fr;
             gap: 25px;
+        }
+        @media(min-width: 1024px) {
+            .workspace { grid-template-columns: 360px 1fr; }
         }
 
         .setup-sidebar {
@@ -68,64 +80,63 @@
 
         .setup-sidebar h2 {
             margin-top: 20px;
-            font-size: 14px;
+            font-size: 13px;
             text-transform: uppercase;
             color: var(--accent-green);
             border-bottom: 1px solid #2d3238;
-            padding-bottom: 8px;
-            margin-bottom: 15px;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
         }
         .setup-sidebar h2:first-of-type { margin-top: 0; }
 
         .lineup-selectors {
-            max-height: 35vh;
+            max-height: 280px;
             overflow-y: auto;
             margin-bottom: 15px;
             padding-right: 5px;
+            border: 1px solid #16191c;
+            background: #1c2023;
+            border-radius: 6px;
+            padding: 8px;
         }
 
         .selector-row {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
+        .selector-row:last-child { margin-bottom: 0; }
 
-        .number-input {
-            width: 45px;
-            text-align: center;
-            font-weight: 700;
-        }
+        .number-input { width: 42px; text-align: center; font-weight: 700; }
 
-        select, input {
+        select, input[type="text"], input[type="number"] {
             padding: 8px;
             border-radius: 4px;
             border: 1px solid #3a4149;
             background-color: #16191c;
             color: white;
             font-family: 'Montserrat', sans-serif;
-            font-size: 13px;
+            font-size: 12px;
             box-sizing: border-box;
         }
-        
         select { flex: 1; min-width: 0; }
 
-        /* Slider Tool Layout Styling */
         .slider-group {
-            margin-top: 10px;
             background: #16191c;
-            padding: 10px;
-            border-radius: 6px;
+            padding: 12px;
+            border-radius: 8px;
             border: 1px solid #3a4149;
+            margin-top: 12px;
         }
         .slider-control {
             display: flex;
             flex-direction: column;
-            gap: 2px;
-            margin-bottom: 8px;
+            gap: 3px;
+            margin-bottom: 10px;
         }
         .slider-control:last-child { margin-bottom: 0; }
-        .slider-control label { font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); }
+        .slider-control label { font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); }
         .slider-control input[type="range"] { padding: 0; width: 100%; cursor: pointer; }
 
         .production-zone {
@@ -138,23 +149,33 @@
             background-color: var(--panel-bg);
             border-radius: 12px;
             border: 1px solid #2d3238;
-            padding: 25px;
+            padding: 20px;
         }
 
         .dashboard-section h2 {
             margin-top: 0;
-            font-size: 18px;
+            font-size: 16px;
             text-transform: uppercase;
             border-bottom: 1px solid #2d3238;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
         }
 
         .canvas-container {
             display: flex;
-            gap: 25px;
-            align-items: flex-start;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+        @media(min-width: 600px) {
+            .canvas-container { flex-direction: row; align-items: flex-start; }
+        }
+
+        /* Mobile Scale Protection Wrap Wrapper Layer */
+        .canvas-responsive-scaler {
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1 / 1;
         }
 
         .poster-canvas {
@@ -168,6 +189,7 @@
             flex-direction: column;
             justify-content: space-between;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform-origin: top left;
         }
 
         .canvas-header {
@@ -178,126 +200,108 @@
             align-items: center;
             z-index: 10;
         }
-        .canvas-header img { height: 50px; object-fit: contain; }
-        .canvas-header h3 { margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+        .canvas-header img { height: 45px; object-fit: contain; }
+        .canvas-header h3 { margin: 0; font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
 
         .canvas-body { 
             padding: 0 20px; 
             flex: 1; 
             display: grid; 
-            grid-template-columns: 1.3fr 0.7fr; 
+            grid-template-columns: 1.4fr 0.6fr; 
             align-items: center; 
             z-index: 10; 
-            gap: 15px;
+            gap: 10px;
             overflow: hidden;
         }
         
-        /* Enlarged Single Column Lineup Settings */
         .lineup-single-column {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            max-height: 380px;
             width: 100%;
+            height: 100%;
+            justify-content: center;
         }
 
+        /* Variable Calculation Sizing Bases */
         .player-row-item {
-            font-size: 13px; /* Enlarged Font size */
-            font-weight: 900;
-            text-transform: uppercase;
-            line-height: 1.1;
-            letter-spacing: 0.3px;
-        }
-
-        .player-sponsor-inline {
-            display: block; /* Moves details underneath player name */
-            font-size: 9px;
-            color: var(--accent-green);
             font-weight: 700;
             text-transform: uppercase;
-            margin-bottom: 3px;
-            letter-spacing: 0.5px;
+            line-height: 1.1;
+            color: var(--player-color-pick);
         }
+        .starter-item { font-size: 11px; font-weight: 900; }
+        .sub-item { font-size: 9.5px; font-weight: 700; opacity: 0.9; }
+
+        .player-sponsor-inline {
+            display: block; 
+            font-size: 8px;
+            color: var(--sponsor-color-pick);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .sub-item .player-sponsor-inline { font-size: 7.5px; margin-bottom: 1px; }
         
         .subs-section-block {
-            margin-top: 8px;
+            margin-top: 5px;
             border-top: 1px dashed #3a4149;
-            padding-top: 6px;
+            padding-top: 4px;
         }
         .subs-header-text {
             color: var(--accent-green);
-            font-size: 11px;
+            font-size: 9px;
             letter-spacing: 1px;
             font-weight: 900;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .canvas-footer {
             background-color: #000;
-            padding: 12px;
+            padding: 10px;
             text-align: center;
             border-top: 3px solid var(--accent-green);
             z-index: 10;
         }
 
-        .sponsor-banner-box {
-            font-size: 11px;
-            text-transform: uppercase;
-            font-weight: 900;
-            letter-spacing: 1px;
-        }
-
         .event-triggers {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
         }
 
         .event-card {
             background: #16191c;
             border: 1px solid #3a4149;
             border-radius: 8px;
-            padding: 15px;
+            padding: 12px;
         }
-        .event-card h4 { margin: 0 0 10px 0; font-size: 13px; text-transform: uppercase; color: var(--accent-green); }
-        .event-card .field-group { margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
-        .event-card label { font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); }
+        .event-card h4 { margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; color: var(--accent-green); }
+        .event-card .field-group { margin-bottom: 6px; display: flex; flex-direction: column; gap: 3px; }
+        .event-card label { font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); }
 
         .event-title-hero {
-            font-size: 44px;
+            font-size: 40px;
             font-weight: 900;
             text-transform: uppercase;
             line-height: 0.95;
             color: white;
             text-shadow: 0 4px 10px rgba(0,0,0,0.9);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .event-player-name {
-            font-size: 26px;
+            font-size: 22px;
             font-weight: 900;
             text-transform: uppercase;
             color: var(--accent-green);
             text-shadow: 0 2px 8px rgba(0,0,0,0.9);
         }
-        .event-sub-details {
-            font-size: 13px;
-            color: var(--text-light);
-            margin-top: 5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            background: rgba(0,0,0,0.7);
-            padding: 4px 10px;
-            border-radius: 4px;
-            display: inline-block;
-        }
 
-        /* Image Containers & Dynamic Slider Layers */
         .lineup-photo-wrapper {
             position: absolute;
             top: 0;
             right: 0;
-            width: 50%;
+            width: 55%;
             height: 100%;
             z-index: 1;
             overflow: hidden;
@@ -312,14 +316,13 @@
             transform-origin: center center;
         }
 
-        /* Right-to-Left Edge Fade Gradient Layer Overlay */
         .lineup-photo-fade-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, var(--canvas-bg) 0%, rgba(8,9,10,0.7) 25%, transparent 100%);
+            background: linear-gradient(90deg, var(--canvas-bg) 0%, rgba(8,9,10,0.6) 35%, transparent 100%);
             z-index: 2;
         }
 
@@ -330,6 +333,20 @@
             pointer-events: none;
             transform-origin: center center;
         }
+
+        .color-inputs-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: #16191c;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #3a4149;
+            margin-top: 10px;
+        }
+        .color-field { display: flex; flex-direction: column; gap: 4px; }
+        .color-field label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+        .color-field input[type="color"] { background: none; border: none; padding: 0; width: 100%; height: 30px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -342,21 +359,25 @@
     <div class="workspace">
         <div class="setup-sidebar">
             <h2>Match Info</h2>
-            <div style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 4px;">
-                <label style="font-size: 10px; text-transform: uppercase; font-weight: 700;">Opponent Name:</label>
+            <div style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 9px; text-transform: uppercase; font-weight: 700;">Opponent Name:</label>
                 <input type="text" id="opponentInput" value="Opponent FC" oninput="updateLineupPoster()">
             </div>
             
             <h2>Starting XI</h2>
             <div class="lineup-selectors" id="startingSelectorsContainer"></div>
 
-            <h2>Substitutes (Max 5)</h2>
+            <h2>Substitutes Configuration</h2>
+            <div style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 9px; text-transform: uppercase; font-weight: 700;">Count:</label>
+                <select id="subCountSelector" onchange="adjustSubDropdownCount()"></select>
+            </div>
             <div class="lineup-selectors" id="subSelectorsContainer"></div>
 
-            <h2>Lineup Poster Photo</h2>
+            <h2>Lineup Photo & Styling Engine</h2>
             <div style="display:flex; flex-direction:column; gap:8px; background:#16191c; padding:12px; border-radius:6px; border:1px solid #3a4149;">
                 <div style="display:flex; flex-direction:column; gap:4px;">
-                    <label style="font-size:10px; font-weight:700; text-transform:uppercase;">Photo Target Source:</label>
+                    <label style="font-size:9px; font-weight:700; text-transform:uppercase;">Photo Source Target:</label>
                     <select id="lineupPhotoSourceMode" onchange="toggleLineupPhotoSource()">
                         <option value="player">Linked Squad Player Photo</option>
                         <option value="manual">Enter Manual Path Directly</option>
@@ -365,11 +386,11 @@
 
                 <div id="lineupPhotoPlayerGroup" style="display:flex; flex-direction:column; gap:8px;">
                     <div style="display:flex; flex-direction:column; gap:4px;">
-                        <label style="font-size:10px; font-weight:700; text-transform:uppercase;">Select Featured Player:</label>
+                        <label style="font-size:9px; font-weight:700; text-transform:uppercase;">Featured Player:</label>
                         <select id="lineupFeaturedPlayerSelect" onchange="updateLineupPoster()"></select>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:4px;">
-                        <label style="font-size:10px; font-weight:700; text-transform:uppercase;">Image Variant Name:</label>
+                        <label style="font-size:9px; font-weight:700; text-transform:uppercase;">Image Variant Name:</label>
                         <select id="lineupImageVariant" onchange="updateLineupPoster()">
                             <option value="HS">Head Shot (HS.jpg)</option>
                             <option value="01">Action Frame 1 (01.jpg)</option>
@@ -379,28 +400,23 @@
                 </div>
 
                 <div id="lineupPhotoManualGroup" style="display:none; flex-direction:column; gap:4px;">
-                    <label style="font-size:10px; font-weight:700; text-transform:uppercase;">Manual Path Name:</label>
-                    <input type="text" id="lineupManualPhotoPath" value="Images/WG1/HS.jpg" oninput="updateLineupPoster()" placeholder="e.g. Images/WG1/01.jpg">
+                    <label style="font-size:9px; font-weight:700; text-transform:uppercase;">Manual Path:</label>
+                    <input type="text" id="lineupManualPhotoPath" value="Images/WG1/HS.jpg" oninput="updateLineupPoster()">
                 </div>
 
-                <!-- Lineup Photo Sizing Sliders -->
-                <div class="slider-group">
-                    <div class="slider-control">
-                        <label>Image Zoom</label>
-                        <input type="range" id="lpZoom" min="0.5" max="3" step="0.05" value="1.0" oninput="applyLineupPhotoAdjustments()">
+                <div class="color-inputs-container">
+                    <div class="color-field">
+                        <label>Player Text</label>
+                        <input type="color" id="playerColorPicker" value="#ffffff" oninput="updateCanvasColors()">
                     </div>
-                    <div class="slider-control">
-                        <label>Horizontal Shift</label>
-                        <input type="range" id="lpHori" min="-200" max="200" step="2" value="0" oninput="applyLineupPhotoAdjustments()">
-                    </div>
-                    <div class="slider-control">
-                        <label>Vertical Shift</label>
-                        <input type="range" id="lpVert" min="-200" max="200" step="2" value="0" oninput="applyLineupPhotoAdjustments()">
+                    <div class="color-field">
+                        <label>Sponsor Text</label>
+                        <input type="color" id="sponsorColorPicker" value="#2db92d" oninput="updateCanvasColors()">
                     </div>
                 </div>
             </div>
 
-            <button class="btn" style="width: 100%; margin-top: 20px;" onclick="lockAndSyncEngine()">Lock Squad & Sync Engine</button>
+            <button class="btn" style="width: 100%; margin-top: 15px;" onclick="lockAndSyncEngine()">Lock Squad & Sync Engine</button>
         </div>
 
         <div class="production-zone">
@@ -408,39 +424,64 @@
             <div class="dashboard-section">
                 <h2>1. Team Lineup Poster</h2>
                 <div class="canvas-container">
-                    <div class="poster-canvas" id="lineupCanvas">
-                        <!-- Right Column Photo Area Wrapper Stack Layer -->
-                        <div class="lineup-photo-wrapper">
-                            <div class="lineup-photo-fade-overlay"></div>
-                            <img src="" id="lineupPosterFeatureImage" class="poster-embedded-photo" style="display:none;" alt="Roster Hero">
-                        </div>
-
-                        <div class="canvas-header">
-                            <div>
-                                <h3 style="color: var(--accent-green);">MATCH DAY</h3>
-                                <div style="font-size: 11px; font-weight: 700;" id="vsOpponent">VS OPPONENT FC</div>
+                    <div class="canvas-responsive-scaler">
+                        <div class="poster-canvas" id="lineupCanvas">
+                            <div class="lineup-photo-wrapper">
+                                <div class="lineup-photo-fade-overlay" id="lineupFadeMask"></div>
+                                <img src="" id="lineupPosterFeatureImage" class="poster-embedded-photo" style="display:none;" alt="Roster Hero">
                             </div>
-                            <img src="WaunG.png" alt="Club Logo">
-                        </div>
-                        
-                        <div class="canvas-body">
-                            <div class="lineup-single-column">
-                                <div id="startingXiColumn"></div>
-                                <div class="subs-section-block">
-                                    <div class="subs-header-text">SUBSTITUTES</div>
-                                    <div id="subsColumn"></div>
+
+                            <div class="canvas-header">
+                                <div>
+                                    <h3 style="color: var(--accent-green);">MATCH DAY</h3>
+                                    <div style="font-size: 10px; font-weight: 700;" id="vsOpponent">VS OPPONENT FC</div>
                                 </div>
+                                <img src="WaunG.png" alt="Club Logo">
                             </div>
-                            <div></div> <!-- Maintained Grid Balance Spacing Element -->
-                        </div>
+                            
+                            <div class="canvas-body">
+                                <div class="lineup-single-column" id="lineupColumnContainer">
+                                    <div id="startingXiColumn" style="display:flex; flex-direction:column; justify-content:space-between; flex:1;"></div>
+                                    <div class="subs-section-block" id="subsSectionBlock">
+                                        <div class="subs-header-text">SUBSTITUTES</div>
+                                        <div id="subsColumn" style="display:flex; flex-direction:column; justify-content:flex-start; gap:2px;"></div>
+                                    </div>
+                                </div>
+                                <div></div>
+                            </div>
 
-                        <div class="canvas-footer">
-                            <div class="sponsor-banner-box">
-                                <div style="color: var(--text-muted); font-size: 8px; letter-spacing:0.5px;">WAUNARLYWDD GALAXY MATCH PRODUCTION WORKSPACE</div>
+                            <div class="canvas-footer">
+                                <div class="sponsor-banner-box">
+                                    <div style="color: var(--text-muted); font-size: 8px; letter-spacing:0.5px;">WAUNARLYWDD GALAXY MATCH PRODUCTION WORKSPACE</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <button class="btn" onclick="downloadGraphic('lineupCanvas', 'Lineup_Poster')">Download Lineup</button>
+                    
+                    <div style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:260px;">
+                        <button class="btn" onclick="downloadGraphic('lineupCanvas', 'Lineup_Poster')">Download Lineup</button>
+                        
+                        <!-- Repositioned & Upgraded Lineup Controls Sliders Section -->
+                        <div class="slider-group">
+                            <div style="font-size:9px; font-weight:700; text-transform:uppercase; color:var(--accent-green); margin-bottom:8px;">Lineup Photo Tuning Layout</div>
+                            <div class="slider-control">
+                                <label>Image Zoom</label>
+                                <input type="range" id="lpZoom" min="0.5" max="3" step="0.05" value="1.0" oninput="applyLineupPhotoAdjustments()">
+                            </div>
+                            <div class="slider-control">
+                                <label>Horizontal Shift</label>
+                                <input type="range" id="lpHori" min="-200" max="200" step="2" value="0" oninput="applyLineupPhotoAdjustments()">
+                            </div>
+                            <div class="slider-control">
+                                <label>Vertical Shift</label>
+                                <input type="range" id="lpVert" min="-200" max="200" step="2" value="0" oninput="applyLineupPhotoAdjustments()">
+                            </div>
+                            <div class="slider-control">
+                                <label>Fade Point Offset</label>
+                                <input type="range" id="lpFade" min="0" max="100" step="1" value="35" oninput="applyLineupPhotoAdjustments()">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -449,7 +490,6 @@
                 <h2>2. Live Match Alert Generators</h2>
                 
                 <div class="event-triggers">
-                    <!-- GOAL TRIGGER -->
                     <div class="event-card">
                         <h4>Goal Scored</h4>
                         <div class="field-group">
@@ -457,7 +497,7 @@
                             <select id="goalScorerSelect" class="squad-dropdown" onchange="syncAlertPhotoOption('GOAL')"></select>
                         </div>
                         <div class="field-group">
-                            <label>Photo Source Type:</label>
+                            <label>Photo Type:</label>
                             <select id="goalPhotoType" onchange="generateMatchEvent('GOAL')">
                                 <option value="HS">Head Shot (HS.jpg)</option>
                                 <option value="01">Action Frame 1 (01.jpg)</option>
@@ -468,10 +508,9 @@
                             <label>Assist By:</label>
                             <select id="goalAssistSelect" class="squad-dropdown"></select>
                         </div>
-                        <button class="btn" style="width: 100%; margin-top: 10px; font-size: 11px;" onclick="generateMatchEvent('GOAL')">Update Goal Graphic</button>
+                        <button class="btn" style="width: 100%; margin-top: 5px;" onclick="generateMatchEvent('GOAL')">Update Goal</button>
                     </div>
 
-                    <!-- SUB TRIGGER -->
                     <div class="event-card">
                         <h4>Substitution</h4>
                         <div class="field-group">
@@ -490,10 +529,9 @@
                                 <option value="02">Action Frame 2 (02.jpg)</option>
                             </select>
                         </div>
-                        <button class="btn" style="width: 100%; margin-top: 10px; font-size: 11px;" onclick="generateMatchEvent('SUB')">Update Sub Graphic</button>
+                        <button class="btn" style="width: 100%; margin-top: 5px;" onclick="generateMatchEvent('SUB')">Update Sub</button>
                     </div>
 
-                    <!-- PENALTY SAVE -->
                     <div class="event-card">
                         <h4>Penalty Save</h4>
                         <div class="field-group">
@@ -508,50 +546,52 @@
                                 <option value="02">Action Frame 2 (02.jpg)</option>
                             </select>
                         </div>
-                        <button class="btn" style="width: 100%; margin-top: 48px; font-size: 11px;" onclick="generateMatchEvent('SAVE')">Update Save Graphic</button>
-                    </div>
-                </div>
-
-                <!-- Match Alerts Workspace Layout Control sliders -->
-                <div class="slider-group" style="margin-bottom:15px; max-width: 500px;">
-                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--accent-green); margin-bottom:8px;">Live Alert Photo Tuning Panels</div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-                        <div class="slider-control">
-                            <label>Alert Zoom</label>
-                            <input type="range" id="evZoom" min="0.5" max="3" step="0.05" value="1.0" oninput="applyEventPhotoAdjustments()">
-                        </div>
-                        <div class="slider-control">
-                            <label>Horiz Shift</label>
-                            <input type="range" id="evHori" min="-200" max="200" step="2" value="0" oninput="applyEventPhotoAdjustments()">
-                        </div>
-                        <div class="slider-control">
-                            <label>Vert Shift</label>
-                            <input type="range" id="evVert" min="-200" max="200" step="2" value="0" oninput="applyEventPhotoAdjustments()">
-                        </div>
+                        <button class="btn" style="width: 100%; margin-top: 42px;" onclick="generateMatchEvent('SAVE')">Update Save</button>
                     </div>
                 </div>
 
                 <div class="canvas-container">
-                    <div class="poster-canvas" id="eventCanvas">
-                        <img src="" id="eventPlayerPhoto" class="canvas-photo-bg" style="display: none;" alt="Player Photo">
-                        
-                        <div class="canvas-header">
-                            <h3 id="eventHeaderTitle" style="color: var(--accent-green);">MATCH ALERT</h3>
-                            <img src="WaunG.png" alt="Club Logo">
-                        </div>
-                        <div class="canvas-body" style="display:block; padding-top:60px; max-width: 60%;">
-                            <div class="event-title-hero" id="eventHeroText">GOAL!</div>
-                            <div class="event-player-name" id="eventPlayerText">PLAYER NAME</div>
-                            <div><div class="event-sub-details" id="eventDetailsText"></div></div>
-                        </div>
-                        <div class="canvas-footer" id="eventSponsorFooter">
-                            <div class="sponsor-banner-box">
-                                <div style="color: var(--text-muted); font-size: 9px;" id="eventSponsorLabel">Player Sponsored By</div>
-                                <div class="sponsor-name" id="eventSponsorName">Sponsorship Available</div>
+                    <div class="canvas-responsive-scaler">
+                        <div class="poster-canvas" id="eventCanvas">
+                            <img src="" id="eventPlayerPhoto" class="canvas-photo-bg" style="display: none;" alt="Player Photo">
+                            
+                            <div class="canvas-header">
+                                <h3 id="eventHeaderTitle" style="color: var(--accent-green);">MATCH ALERT</h3>
+                                <img src="WaunG.png" alt="Club Logo">
+                            </div>
+                            <div class="canvas-body" style="display:block; padding-top:60px; max-width: 60%;">
+                                <div class="event-title-hero" id="eventHeroText">GOAL!</div>
+                                <div class="event-player-name" id="eventPlayerText">PLAYER NAME</div>
+                                <div><div class="event-sub-details" id="eventDetailsText"></div></div>
+                            </div>
+                            <div class="canvas-footer" id="eventSponsorFooter">
+                                <div class="sponsor-banner-box">
+                                    <div style="color: var(--text-muted); font-size: 9px;" id="eventSponsorLabel">Player Sponsored By</div>
+                                    <div class="sponsor-name" id="eventSponsorName">Sponsorship Available</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <button class="btn" onclick="downloadGraphic('eventCanvas', 'Match_Event_Alert')">Download Event Alert</button>
+
+                    <div style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:260px;">
+                        <button class="btn" onclick="downloadGraphic('eventCanvas', 'Match_Event_Alert')">Download Event Alert</button>
+                        
+                        <div class="slider-group">
+                            <div style="font-size:9px; font-weight:700; text-transform:uppercase; color:var(--accent-green); margin-bottom:8px;">Live Alert Photo Tuning</div>
+                            <div class="slider-control">
+                                <label>Alert Zoom</label>
+                                <input type="range" id="evZoom" min="0.5" max="3" step="0.05" value="1.0" oninput="applyEventPhotoAdjustments()">
+                            </div>
+                            <div class="slider-control">
+                                <label>Horiz Shift</label>
+                                <input type="range" id="evHori" min="-200" max="200" step="2" value="0" oninput="applyEventPhotoAdjustments()">
+                            </div>
+                            <div class="slider-control">
+                                <label>Vert Shift</label>
+                                <input type="range" id="evVert" min="-200" max="200" step="2" value="0" oninput="applyEventPhotoAdjustments()">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -562,6 +602,10 @@
         let lockedSquad = []; 
 
         window.onload = async function() {
+            populateSubCountSelector();
+            setupResponsiveRescalerEngine();
+            window.addEventListener('resize', setupResponsiveRescalerEngine);
+
             try {
                 const response = await fetch('Player List.csv?v=' + new Date().getTime());
                 if (!response.ok) throw new Error("Could not read CSV file.");
@@ -574,6 +618,30 @@
                 console.error(err);
             }
         };
+
+        function setupResponsiveRescalerEngine() {
+            const scalers = document.querySelectorAll('.canvas-responsive-scaler');
+            scalers.forEach(scaler => {
+                const containerWidth = scaler.clientWidth;
+                const scaleValue = containerWidth / 500;
+                const canvas = scaler.querySelector('.poster-canvas');
+                if(canvas) {
+                    canvas.style.transform = `scale(${scaleValue})`;
+                }
+            });
+        }
+
+        function populateSubCountSelector() {
+            const sc = document.getElementById('subCountSelector');
+            sc.innerHTML = '';
+            for(let i=0; i<=5; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `${i} Substitutes`;
+                if(i===5) opt.selected = true;
+                sc.appendChild(opt);
+            }
+        }
 
         function parseCSV(text) {
             const cleanText = text.replace(/^\uFEFF/, "").replace(/\r/g, "");
@@ -608,14 +676,40 @@
             for (let i = 1; i <= 11; i++) {
                 createSelectorRow(startContainer, i, 'start');
             }
+            adjustSubDropdownCount();
+        }
 
+        function adjustSubDropdownCount() {
+            const count = parseInt(document.getElementById('subCountSelector').value);
             const subContainer = document.getElementById('subSelectorsContainer');
+            
+            // Retain values if possible
+            const currentValues = {};
+            subContainer.querySelectorAll('select').forEach(sel => {
+                currentValues[sel.id] = sel.value;
+            });
+            const currentNumbers = {};
+            subContainer.querySelectorAll('input[type="number"]').forEach(inp => {
+                currentNumbers[inp.id] = inp.value;
+            });
+
             subContainer.innerHTML = '';
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= count; i++) {
                 createSelectorRow(subContainer, i, 'sub');
+                
+                // Reapply cached selections
+                const targetSel = document.getElementById(`sub_sel_${i}`);
+                if(targetSel && currentValues[`sub_sel_${i}`]) {
+                    targetSel.value = currentValues[`sub_sel_${i}`];
+                }
+                const targetInp = document.getElementById(`sub_num_${i}`);
+                if(targetInp && currentNumbers[`sub_num_${i}`]) {
+                    targetInp.value = currentNumbers[`sub_num_${i}`];
+                }
             }
 
             populateAllDropdownOptions();
+            updateLineupPoster();
         }
 
         function createSelectorRow(container, index, type) {
@@ -685,23 +779,41 @@
             updateLineupPoster();
         }
 
+        function updateCanvasColors() {
+            const pColor = document.getElementById('playerColorPicker').value;
+            const sColor = document.getElementById('sponsorColorPicker').value;
+            
+            document.documentElement.style.setProperty('--player-color-pick', pColor);
+            document.documentElement.style.setProperty('--sponsor-color-pick', sColor);
+        }
+
         function updateLineupPoster() {
             const oppName = document.getElementById('opponentInput').value || 'Opponent FC';
             document.getElementById('vsOpponent').textContent = `VS ${oppName.toUpperCase()}`;
 
             const startCol = document.getElementById('startingXiColumn');
             const subCol = document.getElementById('subsColumn');
+            const subsBlock = document.getElementById('subsSectionBlock');
+            const subCount = parseInt(document.getElementById('subCountSelector').value);
+            
             startCol.innerHTML = '';
             subCol.innerHTML = '';
 
-            // Render single layout list using enhanced fonts and stacked configurations
+            // Handle dynamic structural block resizing properties based on lines count
+            if(subCount === 0) {
+                subsBlock.style.display = 'none';
+            } else {
+                subsBlock.style.display = 'block';
+            }
+
+            // Render Starting List elements
             for (let i = 1; i <= 11; i++) {
                 const num = document.getElementById(`start_num_${i}`).value || i;
                 const val = document.getElementById(`start_sel_${i}`).value;
                 const player = allPlayers.find(p => p.ref === val);
                 
                 const row = document.createElement('div');
-                row.className = 'player-row-item';
+                row.className = 'player-row-item starter-item';
                 
                 if (player) {
                     const spText = (player.sponsor && player.sponsor.toLowerCase() !== 'none' && player.sponsor !== '') ? `Player Sponsor: ${player.sponsor}` : 'Sponsorship Available';
@@ -712,13 +824,16 @@
                 startCol.appendChild(row);
             }
 
-            for (let i = 1; i <= 5; i++) {
-                const num = document.getElementById(`sub_num_${i}`).value || 'Sub';
-                const val = document.getElementById(`sub_sel_${i}`).value;
+            // Render Substitutes items
+            for (let i = 1; i <= subCount; i++) {
+                const numInput = document.getElementById(`sub_num_${i}`);
+                const num = (numInput && numInput.value) ? numInput.value : 'Sub';
+                const sel = document.getElementById(`sub_sel_${i}`);
+                const val = sel ? sel.value : '';
                 const player = allPlayers.find(p => p.ref === val);
                 
                 const row = document.createElement('div');
-                row.className = 'player-row-item';
+                row.className = 'player-row-item sub-item';
                 
                 if (player) {
                     const spText = (player.sponsor && player.sponsor.toLowerCase() !== 'none' && player.sponsor !== '') ? `Sponsor: ${player.sponsor}` : 'Sponsorship Available';
@@ -761,11 +876,19 @@
 
         function applyLineupPhotoAdjustments() {
             const img = document.getElementById('lineupPosterFeatureImage');
+            const mask = document.getElementById('lineupFadeMask');
+            
             const zoom = document.getElementById('lpZoom').value;
             const hori = document.getElementById('lpHori').value;
             const vert = document.getElementById('lpVert').value;
+            const fade = document.getElementById('lpFade').value;
             
-            img.style.transform = `scale(${zoom}) translate(${hori}px, ${vert}px)`;
+            if(img) {
+                img.style.transform = `scale(${zoom}) translate(${hori}px, ${vert}px)`;
+            }
+            if(mask) {
+                mask.style.background = `linear-gradient(90deg, var(--canvas-bg) 0%, rgba(8,9,10,0.7) ${fade}%, transparent 100%)`;
+            }
         }
 
         function lockAndSyncEngine() {
@@ -778,7 +901,8 @@
                     if (player) {
                         const idParts = picker.id.split('_');
                         const numInputId = `${idParts[0]}_num_${idParts[2]}`;
-                        const shirtNum = document.getElementById(numInputId).value || '#';
+                        const targetInp = document.getElementById(numInputId);
+                        const shirtNum = targetInp ? (targetInp.value || '#') : '#';
                         
                         lockedSquad.push({
                             ...player,
@@ -902,34 +1026,39 @@
             const hori = document.getElementById('evHori').value;
             const vert = document.getElementById('evVert').value;
             
-            // Sets positioning dynamically while keeping structural canvas rules solid
-            img.style.transform = `scale(${zoom}) translate(${hori}px, ${vert}px)`;
-            
-            // Baseline default placement rules when transform fields clear defaults
-            if (hori == 0 && vert == 0 && zoom == 1) {
-                img.style.right = "-10px";
-                img.style.bottom = "45px";
-                img.style.height = "82%;";
-                img.style.width = "auto";
-            } else {
-                img.style.right = "20px";
-                img.style.bottom = "80px";
-                img.style.height = "350px";
-                img.style.width = "220px";
+            if(img) {
+                img.style.transform = `scale(${zoom}) translate(${hori}px, ${vert}px)`;
+                if (hori == 0 && vert == 0 && zoom == 1) {
+                    img.style.right = "-10px";
+                    img.style.bottom = "45px";
+                    img.style.height = "82%";
+                    img.style.width = "auto";
+                } else {
+                    img.style.right = "20px";
+                    img.style.bottom = "80px";
+                    img.style.height = "350px";
+                    img.style.width = "220px";
+                }
             }
         }
 
         function downloadGraphic(canvasId, nameString) {
             const element = document.getElementById(canvasId);
+            
+            // Temporarily lift scales for high-res native snapshot imaging render runs
+            const originalTransform = element.style.transform;
+            element.style.transform = "none";
+            
             window.scrollTo(0,0);
             
             html2canvas(element, {
                 useCORS: true,
                 scale: 2,
                 logging: false,
-                windowWidth: 500,
-                windowHeight: 500
+                width: 500,
+                height: 500
             }).then(canvas => {
+                element.style.transform = originalTransform; // Restore active view scale state
                 const link = document.createElement('a');
                 link.download = `${nameString}_${new Date().getTime()}.jpg`;
                 link.href = canvas.toDataURL('image/jpeg', 0.95);
