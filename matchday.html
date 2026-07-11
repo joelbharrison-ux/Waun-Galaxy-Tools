@@ -78,7 +78,7 @@
         .setup-sidebar h2:first-of-type { margin-top: 0; }
 
         .lineup-selectors {
-            max-height: 45vh;
+            max-height: 35vh;
             overflow-y: auto;
             margin-bottom: 15px;
             padding-right: 5px;
@@ -109,6 +109,24 @@
         }
         
         select { flex: 1; min-width: 0; }
+
+        /* Slider Tool Layout Styling */
+        .slider-group {
+            margin-top: 10px;
+            background: #16191c;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #3a4149;
+        }
+        .slider-control {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 8px;
+        }
+        .slider-control:last-child { margin-bottom: 0; }
+        .slider-control label { font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); }
+        .slider-control input[type="range"] { padding: 0; width: 100%; cursor: pointer; }
 
         .production-zone {
             display: flex;
@@ -158,7 +176,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 5;
+            z-index: 10;
         }
         .canvas-header img { height: 50px; object-fit: contain; }
         .canvas-header h3 { margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
@@ -167,44 +185,48 @@
             padding: 0 20px; 
             flex: 1; 
             display: grid; 
-            grid-template-columns: 1.2fr 0.8fr; 
+            grid-template-columns: 1.3fr 0.7fr; 
             align-items: center; 
-            z-index: 5; 
+            z-index: 10; 
             gap: 15px;
             overflow: hidden;
         }
         
-        /* Left Hand Stack Lineup Configuration */
+        /* Enlarged Single Column Lineup Settings */
         .lineup-single-column {
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            max-height: 350px;
+            gap: 4px;
+            max-height: 380px;
+            width: 100%;
         }
 
         .player-row-item {
-            font-size: 11px;
-            font-weight: 700;
+            font-size: 13px; /* Enlarged Font size */
+            font-weight: 900;
             text-transform: uppercase;
-            line-height: 1.2;
+            line-height: 1.1;
+            letter-spacing: 0.3px;
         }
 
         .player-sponsor-inline {
+            display: block; /* Moves details underneath player name */
             font-size: 9px;
             color: var(--accent-green);
-            font-weight: 500;
-            margin-left: 5px;
+            font-weight: 700;
             text-transform: uppercase;
+            margin-bottom: 3px;
+            letter-spacing: 0.5px;
         }
         
         .subs-section-block {
-            margin-top: 10px;
+            margin-top: 8px;
             border-top: 1px dashed #3a4149;
             padding-top: 6px;
         }
         .subs-header-text {
             color: var(--accent-green);
-            font-size: 10px;
+            font-size: 11px;
             letter-spacing: 1px;
             font-weight: 900;
             margin-bottom: 4px;
@@ -215,7 +237,7 @@
             padding: 12px;
             text-align: center;
             border-top: 3px solid var(--accent-green);
-            z-index: 5;
+            z-index: 10;
         }
 
         .sponsor-banner-box {
@@ -252,7 +274,7 @@
             margin-bottom: 10px;
         }
         .event-player-name {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 900;
             text-transform: uppercase;
             color: var(--accent-green);
@@ -270,31 +292,43 @@
             display: inline-block;
         }
 
-        /* Poster Right hand Canvas Panel Placement Asset */
+        /* Image Containers & Dynamic Slider Layers */
+        .lineup-photo-wrapper {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            z-index: 1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        
         .poster-embedded-photo {
-            width: 100%;
-            height: 90%;
+            position: absolute;
             object-fit: contain;
-            filter: drop-shadow(-5px 5px 12px rgba(0,0,0,0.6));
-            align-self: center;
+            width: 100%;
+            height: 100%;
+            transform-origin: center center;
+        }
+
+        /* Right-to-Left Edge Fade Gradient Layer Overlay */
+        .lineup-photo-fade-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--canvas-bg) 0%, rgba(8,9,10,0.7) 25%, transparent 100%);
+            z-index: 2;
         }
 
         .canvas-photo-bg {
             position: absolute;
-            right: -10px;
-            bottom: 45px;
-            height: 82%;
-            width: auto;
             object-fit: contain;
             z-index: 1;
             pointer-events: none;
-            filter: drop-shadow(-5px 5px 15px rgba(0,0,0,0.8));
-        }
-
-        .photo-config-row {
-            display: flex;
-            gap: 6px;
-            margin-top: 5px;
+            transform-origin: center center;
         }
     </style>
 </head>
@@ -329,7 +363,6 @@
                     </select>
                 </div>
 
-                <!-- Mode A Elements -->
                 <div id="lineupPhotoPlayerGroup" style="display:flex; flex-direction:column; gap:8px;">
                     <div style="display:flex; flex-direction:column; gap:4px;">
                         <label style="font-size:10px; font-weight:700; text-transform:uppercase;">Select Featured Player:</label>
@@ -345,10 +378,25 @@
                     </div>
                 </div>
 
-                <!-- Mode B Elements -->
                 <div id="lineupPhotoManualGroup" style="display:none; flex-direction:column; gap:4px;">
                     <label style="font-size:10px; font-weight:700; text-transform:uppercase;">Manual Path Name:</label>
                     <input type="text" id="lineupManualPhotoPath" value="Images/WG1/HS.jpg" oninput="updateLineupPoster()" placeholder="e.g. Images/WG1/01.jpg">
+                </div>
+
+                <!-- Lineup Photo Sizing Sliders -->
+                <div class="slider-group">
+                    <div class="slider-control">
+                        <label>Image Zoom</label>
+                        <input type="range" id="lpZoom" min="0.5" max="3" step="0.05" value="1.0" oninput="applyLineupPhotoAdjustments()">
+                    </div>
+                    <div class="slider-control">
+                        <label>Horizontal Shift</label>
+                        <input type="range" id="lpHori" min="-200" max="200" step="2" value="0" oninput="applyLineupPhotoAdjustments()">
+                    </div>
+                    <div class="slider-control">
+                        <label>Vertical Shift</label>
+                        <input type="range" id="lpVert" min="-200" max="200" step="2" value="0" oninput="applyLineupPhotoAdjustments()">
+                    </div>
                 </div>
             </div>
 
@@ -361,6 +409,12 @@
                 <h2>1. Team Lineup Poster</h2>
                 <div class="canvas-container">
                     <div class="poster-canvas" id="lineupCanvas">
+                        <!-- Right Column Photo Area Wrapper Stack Layer -->
+                        <div class="lineup-photo-wrapper">
+                            <div class="lineup-photo-fade-overlay"></div>
+                            <img src="" id="lineupPosterFeatureImage" class="poster-embedded-photo" style="display:none;" alt="Roster Hero">
+                        </div>
+
                         <div class="canvas-header">
                             <div>
                                 <h3 style="color: var(--accent-green);">MATCH DAY</h3>
@@ -370,7 +424,6 @@
                         </div>
                         
                         <div class="canvas-body">
-                            <!-- Left Stack Column Area -->
                             <div class="lineup-single-column">
                                 <div id="startingXiColumn"></div>
                                 <div class="subs-section-block">
@@ -378,8 +431,7 @@
                                     <div id="subsColumn"></div>
                                 </div>
                             </div>
-                            <!-- Right Side Graphic Block Frame -->
-                            <img src="" id="lineupPosterFeatureImage" class="poster-embedded-photo" style="display:none;" alt="Roster Hero Graphic">
+                            <div></div> <!-- Maintained Grid Balance Spacing Element -->
                         </div>
 
                         <div class="canvas-footer">
@@ -460,9 +512,27 @@
                     </div>
                 </div>
 
+                <!-- Match Alerts Workspace Layout Control sliders -->
+                <div class="slider-group" style="margin-bottom:15px; max-width: 500px;">
+                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--accent-green); margin-bottom:8px;">Live Alert Photo Tuning Panels</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                        <div class="slider-control">
+                            <label>Alert Zoom</label>
+                            <input type="range" id="evZoom" min="0.5" max="3" step="0.05" value="1.0" oninput="applyEventPhotoAdjustments()">
+                        </div>
+                        <div class="slider-control">
+                            <label>Horiz Shift</label>
+                            <input type="range" id="evHori" min="-200" max="200" step="2" value="0" oninput="applyEventPhotoAdjustments()">
+                        </div>
+                        <div class="slider-control">
+                            <label>Vert Shift</label>
+                            <input type="range" id="evVert" min="-200" max="200" step="2" value="0" oninput="applyEventPhotoAdjustments()">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="canvas-container">
                     <div class="poster-canvas" id="eventCanvas">
-                        <!-- Dynamic Player Photo Asset Background Holder -->
                         <img src="" id="eventPlayerPhoto" class="canvas-photo-bg" style="display: none;" alt="Player Photo">
                         
                         <div class="canvas-header">
@@ -579,7 +649,6 @@
                 picker.value = currentSelectedValue; 
             });
 
-            // Keep the sidebar's Featured Player list updated
             updateSidebarFeaturedPlayerList();
         }
 
@@ -617,7 +686,6 @@
         }
 
         function updateLineupPoster() {
-            // Update match opponent header title configuration layout variables
             const oppName = document.getElementById('opponentInput').value || 'Opponent FC';
             document.getElementById('vsOpponent').textContent = `VS ${oppName.toUpperCase()}`;
 
@@ -626,7 +694,7 @@
             startCol.innerHTML = '';
             subCol.innerHTML = '';
 
-            // 1. Compile Single Left Column Elements
+            // Render single layout list using enhanced fonts and stacked configurations
             for (let i = 1; i <= 11; i++) {
                 const num = document.getElementById(`start_num_${i}`).value || i;
                 const val = document.getElementById(`start_sel_${i}`).value;
@@ -636,7 +704,7 @@
                 row.className = 'player-row-item';
                 
                 if (player) {
-                    const spText = (player.sponsor && player.sponsor.toLowerCase() !== 'none') ? `[Sponsor: ${player.sponsor}]` : '[Sponsorship Available]';
+                    const spText = (player.sponsor && player.sponsor.toLowerCase() !== 'none' && player.sponsor !== '') ? `Player Sponsor: ${player.sponsor}` : 'Sponsorship Available';
                     row.innerHTML = `${num}. ${player.name} <span class="player-sponsor-inline">${spText}</span>`;
                 } else {
                     row.innerHTML = `${num}. Empty Slot`;
@@ -653,7 +721,7 @@
                 row.className = 'player-row-item';
                 
                 if (player) {
-                    const spText = (player.sponsor && player.sponsor.toLowerCase() !== 'none') ? `[Sponsor: ${player.sponsor}]` : '[Sponsorship Available]';
+                    const spText = (player.sponsor && player.sponsor.toLowerCase() !== 'none' && player.sponsor !== '') ? `Sponsor: ${player.sponsor}` : 'Sponsorship Available';
                     row.innerHTML = `${num}. ${player.name} <span class="player-sponsor-inline">${spText}</span>`;
                 } else {
                     row.innerHTML = `${num}. Empty Slot`;
@@ -661,7 +729,6 @@
                 subCol.appendChild(row);
             }
 
-            // 2. Fetch Lineup Poster Display Image Asset Configuration
             const imgElement = document.getElementById('lineupPosterFeatureImage');
             const mode = document.getElementById('lineupPhotoSourceMode').value;
 
@@ -688,6 +755,17 @@
             imgElement.onerror = function() {
                 imgElement.style.display = 'none';
             };
+            
+            applyLineupPhotoAdjustments();
+        }
+
+        function applyLineupPhotoAdjustments() {
+            const img = document.getElementById('lineupPosterFeatureImage');
+            const zoom = document.getElementById('lpZoom').value;
+            const hori = document.getElementById('lpHori').value;
+            const vert = document.getElementById('lpVert').value;
+            
+            img.style.transform = `scale(${zoom}) translate(${hori}px, ${vert}px)`;
         }
 
         function lockAndSyncEngine() {
@@ -715,7 +793,6 @@
                 return;
             }
 
-            // Sync Match Event Dropdowns using ONLY locked matchday pool
             const eventDropdowns = document.querySelectorAll('.squad-dropdown');
             eventDropdowns.forEach(select => {
                 const currentId = select.id;
@@ -739,7 +816,6 @@
         }
 
         function syncAlertPhotoOption(type) {
-            // Evaluates and forces updates to match alerts instantly when fields change
             generateMatchEvent(type);
         }
 
@@ -793,7 +869,6 @@
                 dText.style.display = "inline-block";
             }
 
-            // Display Match Alert Images matching \Images\WG[Ref] / [Variant].jpg
             if (focusPlayer) {
                 photoImg.src = `Images/${focusPlayer.ref}/${imageVariant}.jpg`;
                 photoImg.style.display = "block";
@@ -805,7 +880,8 @@
                 photoImg.style.display = "none";
             };
 
-            // Process Match Alert Sponsors Layout 
+            applyEventPhotoAdjustments();
+
             const nameTarget = document.getElementById('eventSponsorName');
             const labelTarget = document.getElementById('eventSponsorLabel');
             
@@ -817,6 +893,29 @@
                 labelTarget.textContent = "PLAYER SPONSORSHIP AVAILABLE";
                 nameTarget.textContent = "CLICK TO INQUIRE";
                 nameTarget.className = "sponsor-avail";
+            }
+        }
+
+        function applyEventPhotoAdjustments() {
+            const img = document.getElementById('eventPlayerPhoto');
+            const zoom = document.getElementById('evZoom').value;
+            const hori = document.getElementById('evHori').value;
+            const vert = document.getElementById('evVert').value;
+            
+            // Sets positioning dynamically while keeping structural canvas rules solid
+            img.style.transform = `scale(${zoom}) translate(${hori}px, ${vert}px)`;
+            
+            // Baseline default placement rules when transform fields clear defaults
+            if (hori == 0 && vert == 0 && zoom == 1) {
+                img.style.right = "-10px";
+                img.style.bottom = "45px";
+                img.style.height = "82%;";
+                img.style.width = "auto";
+            } else {
+                img.style.right = "20px";
+                img.style.bottom = "80px";
+                img.style.height = "350px";
+                img.style.width = "220px";
             }
         }
 
