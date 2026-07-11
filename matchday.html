@@ -67,7 +67,7 @@
         }
 
         .setup-sidebar h2 {
-            margin-top: 0;
+            margin-top: 20px;
             font-size: 14px;
             text-transform: uppercase;
             color: var(--accent-green);
@@ -75,9 +75,10 @@
             padding-bottom: 8px;
             margin-bottom: 15px;
         }
+        .setup-sidebar h2:first-of-type { margin-top: 0; }
 
         .lineup-selectors {
-            max-height: 60vh;
+            max-height: 45vh;
             overflow-y: auto;
             margin-bottom: 15px;
             padding-right: 5px;
@@ -157,38 +158,64 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 2;
+            z-index: 5;
         }
-        .canvas-header img { height: 60px; object-fit: contain; }
-        .canvas-header h3 { margin: 0; font-size: 24px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+        .canvas-header img { height: 50px; object-fit: contain; }
+        .canvas-header h3 { margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
 
-        .canvas-body { padding: 0 30px; flex: 1; display: flex; flex-direction: column; justify-content: center; z-index: 2; }
+        .canvas-body { 
+            padding: 0 20px; 
+            flex: 1; 
+            display: grid; 
+            grid-template-columns: 1.2fr 0.8fr; 
+            align-items: center; 
+            z-index: 5; 
+            gap: 15px;
+            overflow: hidden;
+        }
         
-        .lineup-display-list {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px 20px;
-            font-size: 12px;
+        /* Left Hand Stack Lineup Configuration */
+        .lineup-single-column {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-height: 350px;
+        }
+
+        .player-row-item {
+            font-size: 11px;
             font-weight: 700;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+
+        .player-sponsor-inline {
+            font-size: 9px;
+            color: var(--accent-green);
+            font-weight: 500;
+            margin-left: 5px;
             text-transform: uppercase;
         }
         
-        .subs-title-row {
-            grid-column: span 2;
-            color: var(--accent-green);
+        .subs-section-block {
             margin-top: 10px;
             border-top: 1px dashed #3a4149;
-            padding-top: 8px;
-            font-size: 11px;
+            padding-top: 6px;
+        }
+        .subs-header-text {
+            color: var(--accent-green);
+            font-size: 10px;
             letter-spacing: 1px;
+            font-weight: 900;
+            margin-bottom: 4px;
         }
 
         .canvas-footer {
             background-color: #000;
-            padding: 15px;
+            padding: 12px;
             text-align: center;
             border-top: 3px solid var(--accent-green);
-            z-index: 2;
+            z-index: 5;
         }
 
         .sponsor-banner-box {
@@ -197,8 +224,6 @@
             font-weight: 900;
             letter-spacing: 1px;
         }
-        .sponsor-name { color: var(--accent-green); font-size: 14px; margin-top: 2px; }
-        .sponsor-avail { color: #ff4d4d; font-size: 12px; letter-spacing: 1.5px; font-weight: 900; }
 
         .event-triggers {
             display: grid;
@@ -218,44 +243,58 @@
         .event-card label { font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); }
 
         .event-title-hero {
-            font-size: 48px;
+            font-size: 44px;
             font-weight: 900;
             text-transform: uppercase;
             line-height: 0.95;
             color: white;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.8);
+            text-shadow: 0 4px 10px rgba(0,0,0,0.9);
             margin-bottom: 10px;
         }
         .event-player-name {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 900;
             text-transform: uppercase;
             color: var(--accent-green);
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.9);
         }
         .event-sub-details {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-light);
             margin-top: 5px;
             font-weight: 700;
             text-transform: uppercase;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.7);
             padding: 4px 10px;
             border-radius: 4px;
             display: inline-block;
         }
 
-        /* Canvas Player Photo System Layout Layer */
+        /* Poster Right hand Canvas Panel Placement Asset */
+        .poster-embedded-photo {
+            width: 100%;
+            height: 90%;
+            object-fit: contain;
+            filter: drop-shadow(-5px 5px 12px rgba(0,0,0,0.6));
+            align-self: center;
+        }
+
         .canvas-photo-bg {
             position: absolute;
-            right: -20px;
+            right: -10px;
             bottom: 45px;
-            height: 80%;
+            height: 82%;
             width: auto;
             object-fit: contain;
             z-index: 1;
             pointer-events: none;
-            filter: drop-shadow(-5px 5px 15px rgba(0,0,0,0.7));
+            filter: drop-shadow(-5px 5px 15px rgba(0,0,0,0.8));
+        }
+
+        .photo-config-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -280,7 +319,40 @@
             <h2>Substitutes (Max 5)</h2>
             <div class="lineup-selectors" id="subSelectorsContainer"></div>
 
-            <button class="btn" style="width: 100%; margin-top: 10px;" onclick="lockAndSyncEngine()">Lock Squad & Sync Engine</button>
+            <h2>Lineup Poster Photo</h2>
+            <div style="display:flex; flex-direction:column; gap:8px; background:#16191c; padding:12px; border-radius:6px; border:1px solid #3a4149;">
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <label style="font-size:10px; font-weight:700; text-transform:uppercase;">Photo Target Source:</label>
+                    <select id="lineupPhotoSourceMode" onchange="toggleLineupPhotoSource()">
+                        <option value="player">Linked Squad Player Photo</option>
+                        <option value="manual">Enter Manual Path Directly</option>
+                    </select>
+                </div>
+
+                <!-- Mode A Elements -->
+                <div id="lineupPhotoPlayerGroup" style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <label style="font-size:10px; font-weight:700; text-transform:uppercase;">Select Featured Player:</label>
+                        <select id="lineupFeaturedPlayerSelect" onchange="updateLineupPoster()"></select>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <label style="font-size:10px; font-weight:700; text-transform:uppercase;">Image Variant Name:</label>
+                        <select id="lineupImageVariant" onchange="updateLineupPoster()">
+                            <option value="HS">Head Shot (HS.jpg)</option>
+                            <option value="01">Action Frame 1 (01.jpg)</option>
+                            <option value="02">Action Frame 2 (02.jpg)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Mode B Elements -->
+                <div id="lineupPhotoManualGroup" style="display:none; flex-direction:column; gap:4px;">
+                    <label style="font-size:10px; font-weight:700; text-transform:uppercase;">Manual Path Name:</label>
+                    <input type="text" id="lineupManualPhotoPath" value="Images/WG1/HS.jpg" oninput="updateLineupPoster()" placeholder="e.g. Images/WG1/01.jpg">
+                </div>
+            </div>
+
+            <button class="btn" style="width: 100%; margin-top: 20px;" onclick="lockAndSyncEngine()">Lock Squad & Sync Engine</button>
         </div>
 
         <div class="production-zone">
@@ -296,13 +368,23 @@
                             </div>
                             <img src="WaunG.png" alt="Club Logo">
                         </div>
+                        
                         <div class="canvas-body">
-                            <div class="lineup-display-list" id="lineupViewList"></div>
+                            <!-- Left Stack Column Area -->
+                            <div class="lineup-single-column">
+                                <div id="startingXiColumn"></div>
+                                <div class="subs-section-block">
+                                    <div class="subs-header-text">SUBSTITUTES</div>
+                                    <div id="subsColumn"></div>
+                                </div>
+                            </div>
+                            <!-- Right Side Graphic Block Frame -->
+                            <img src="" id="lineupPosterFeatureImage" class="poster-embedded-photo" style="display:none;" alt="Roster Hero Graphic">
                         </div>
+
                         <div class="canvas-footer">
                             <div class="sponsor-banner-box">
-                                <div style="color: var(--text-muted); font-size: 9px;">Squad Powered By</div>
-                                <div class="sponsor-name" id="lineupSponsorText">Sponsorship Available</div>
+                                <div style="color: var(--text-muted); font-size: 8px; letter-spacing:0.5px;">WAUNARLYWDD GALAXY MATCH PRODUCTION WORKSPACE</div>
                             </div>
                         </div>
                     </div>
@@ -320,11 +402,19 @@
                         <h4>Goal Scored</h4>
                         <div class="field-group">
                             <label>Scorer:</label>
-                            <select id="goalScorerSelect" class="squad-dropdown"><option>-- Lock Squad First --</option></select>
+                            <select id="goalScorerSelect" class="squad-dropdown" onchange="syncAlertPhotoOption('GOAL')"></select>
+                        </div>
+                        <div class="field-group">
+                            <label>Photo Source Type:</label>
+                            <select id="goalPhotoType" onchange="generateMatchEvent('GOAL')">
+                                <option value="HS">Head Shot (HS.jpg)</option>
+                                <option value="01">Action Frame 1 (01.jpg)</option>
+                                <option value="02">Action Frame 2 (02.jpg)</option>
+                            </select>
                         </div>
                         <div class="field-group">
                             <label>Assist By:</label>
-                            <select id="goalAssistSelect" class="squad-dropdown"><option>-- Lock Squad First --</option></select>
+                            <select id="goalAssistSelect" class="squad-dropdown"></select>
                         </div>
                         <button class="btn" style="width: 100%; margin-top: 10px; font-size: 11px;" onclick="generateMatchEvent('GOAL')">Update Goal Graphic</button>
                     </div>
@@ -334,11 +424,19 @@
                         <h4>Substitution</h4>
                         <div class="field-group">
                             <label>Player Off:</label>
-                            <select id="subOffSelect" class="squad-dropdown"><option>-- Lock Squad First --</option></select>
+                            <select id="subOffSelect" class="squad-dropdown"></select>
                         </div>
                         <div class="field-group">
                             <label>Player On:</label>
-                            <select id="subOnSelect" class="squad-dropdown"><option>-- Lock Squad First --</option></select>
+                            <select id="subOnSelect" class="squad-dropdown" onchange="syncAlertPhotoOption('SUB')"></select>
+                        </div>
+                        <div class="field-group">
+                            <label>Incoming Photo Type:</label>
+                            <select id="subPhotoType" onchange="generateMatchEvent('SUB')">
+                                <option value="HS">Head Shot (HS.jpg)</option>
+                                <option value="01">Action Frame 1 (01.jpg)</option>
+                                <option value="02">Action Frame 2 (02.jpg)</option>
+                            </select>
                         </div>
                         <button class="btn" style="width: 100%; margin-top: 10px; font-size: 11px;" onclick="generateMatchEvent('SUB')">Update Sub Graphic</button>
                     </div>
@@ -348,25 +446,33 @@
                         <h4>Penalty Save</h4>
                         <div class="field-group">
                             <label>Goalkeeper:</label>
-                            <select id="gkSelect" class="squad-dropdown"><option>-- Lock Squad First --</option></select>
+                            <select id="gkSelect" class="squad-dropdown" onchange="syncAlertPhotoOption('SAVE')"></select>
                         </div>
-                        <button class="btn" style="width: 100%; margin-top: 37px; font-size: 11px;" onclick="generateMatchEvent('SAVE')">Update Save Graphic</button>
+                        <div class="field-group">
+                            <label>GK Photo Type:</label>
+                            <select id="savePhotoType" onchange="generateMatchEvent('SAVE')">
+                                <option value="HS">Head Shot (HS.jpg)</option>
+                                <option value="01">Action Frame 1 (01.jpg)</option>
+                                <option value="02">Action Frame 2 (02.jpg)</option>
+                            </select>
+                        </div>
+                        <button class="btn" style="width: 100%; margin-top: 48px; font-size: 11px;" onclick="generateMatchEvent('SAVE')">Update Save Graphic</button>
                     </div>
                 </div>
 
                 <div class="canvas-container">
                     <div class="poster-canvas" id="eventCanvas">
-                        <!-- Dynamic Player Photo Graphic Asset Holder -->
+                        <!-- Dynamic Player Photo Asset Background Holder -->
                         <img src="" id="eventPlayerPhoto" class="canvas-photo-bg" style="display: none;" alt="Player Photo">
                         
                         <div class="canvas-header">
                             <h3 id="eventHeaderTitle" style="color: var(--accent-green);">MATCH ALERT</h3>
                             <img src="WaunG.png" alt="Club Logo">
                         </div>
-                        <div class="canvas-body" style="justify-content: center; align-items: flex-start; text-align: left; max-width: 65%;">
+                        <div class="canvas-body" style="display:block; padding-top:60px; max-width: 60%;">
                             <div class="event-title-hero" id="eventHeroText">GOAL!</div>
                             <div class="event-player-name" id="eventPlayerText">PLAYER NAME</div>
-                            <div class="event-sub-details" id="eventDetailsText"></div>
+                            <div><div class="event-sub-details" id="eventDetailsText"></div></div>
                         </div>
                         <div class="canvas-footer" id="eventSponsorFooter">
                             <div class="sponsor-banner-box">
@@ -445,7 +551,6 @@
         function createSelectorRow(container, index, type) {
             const row = document.createElement('div');
             row.className = 'selector-row';
-            
             const defaultNum = type === 'start' ? index : '';
             
             row.innerHTML = `
@@ -463,19 +568,40 @@
                 picker.innerHTML = '<option value="">-- Choose Player --</option>';
                 
                 allPlayers.forEach(p => {
-                    // Check if this player is selected anywhere else
                     const isSelectedElsewhere = Array.from(pickers).some(other => other !== picker && other.value === p.ref);
-                    
                     if (!isSelectedElsewhere) {
                         const opt = document.createElement('option');
                         opt.value = p.ref;
-                        opt.textContent = p.name;
+                        opt.textContent = `[${p.ref}] ${p.name}`;
                         picker.appendChild(opt);
                     }
                 });
-                
                 picker.value = currentSelectedValue; 
             });
+
+            // Keep the sidebar's Featured Player list updated
+            updateSidebarFeaturedPlayerList();
+        }
+
+        function updateSidebarFeaturedPlayerList() {
+            const select = document.getElementById('lineupFeaturedPlayerSelect');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- No Image Displayed --</option>';
+
+            const pickers = document.querySelectorAll('.squad-picker');
+            let assignedRefs = [];
+            pickers.forEach(p => { if (p.value) assignedRefs.push(p.value); });
+
+            assignedRefs.forEach(ref => {
+                const player = allPlayers.find(p => p.ref === ref);
+                if (player) {
+                    const opt = document.createElement('option');
+                    opt.value = player.ref;
+                    opt.textContent = player.name;
+                    select.appendChild(opt);
+                }
+            });
+            select.value = currentVal;
         }
 
         function handleDropdownExclusion(changedSelect) {
@@ -483,61 +609,85 @@
             updateLineupPoster();
         }
 
+        function toggleLineupPhotoSource() {
+            const mode = document.getElementById('lineupPhotoSourceMode').value;
+            document.getElementById('lineupPhotoPlayerGroup').style.display = (mode === 'player') ? 'flex' : 'none';
+            document.getElementById('lineupPhotoManualGroup').style.display = (mode === 'manual') ? 'flex' : 'none';
+            updateLineupPoster();
+        }
+
         function updateLineupPoster() {
+            // Update match opponent header title configuration layout variables
             const oppName = document.getElementById('opponentInput').value || 'Opponent FC';
             document.getElementById('vsOpponent').textContent = `VS ${oppName.toUpperCase()}`;
 
-            const listView = document.getElementById('lineupViewList');
-            listView.innerHTML = '';
+            const startCol = document.getElementById('startingXiColumn');
+            const subCol = document.getElementById('subsColumn');
+            startCol.innerHTML = '';
+            subCol.innerHTML = '';
 
-            let matchedSponsors = [];
-
-            // 1. Render Starting XI
+            // 1. Compile Single Left Column Elements
             for (let i = 1; i <= 11; i++) {
                 const num = document.getElementById(`start_num_${i}`).value || i;
                 const val = document.getElementById(`start_sel_${i}`).value;
                 const player = allPlayers.find(p => p.ref === val);
                 
-                const item = document.createElement('div');
-                item.textContent = `${num}. ${player ? player.name : 'Empty Slot'}`;
-                listView.appendChild(item);
-
-                if (player && player.sponsor && player.sponsor.toLowerCase() !== 'none' && player.sponsor !== '') {
-                    matchedSponsors.push(player.sponsor);
+                const row = document.createElement('div');
+                row.className = 'player-row-item';
+                
+                if (player) {
+                    const spText = (player.sponsor && player.sponsor.toLowerCase() !== 'none') ? `[Sponsor: ${player.sponsor}]` : '[Sponsorship Available]';
+                    row.innerHTML = `${num}. ${player.name} <span class="player-sponsor-inline">${spText}</span>`;
+                } else {
+                    row.innerHTML = `${num}. Empty Slot`;
                 }
+                startCol.appendChild(row);
             }
 
-            // 2. Render Substitutes Banner Header
-            const subTitle = document.createElement('div');
-            subTitle.className = 'subs-title-row';
-            subTitle.textContent = 'SUBSTITUTES';
-            listView.appendChild(subTitle);
-
-            // 3. Render Subs
             for (let i = 1; i <= 5; i++) {
                 const num = document.getElementById(`sub_num_${i}`).value || 'Sub';
                 const val = document.getElementById(`sub_sel_${i}`).value;
                 const player = allPlayers.find(p => p.ref === val);
                 
-                const item = document.createElement('div');
-                item.textContent = `${num}. ${player ? player.name : 'Empty Slot'}`;
-                listView.appendChild(item);
+                const row = document.createElement('div');
+                row.className = 'player-row-item';
+                
+                if (player) {
+                    const spText = (player.sponsor && player.sponsor.toLowerCase() !== 'none') ? `[Sponsor: ${player.sponsor}]` : '[Sponsorship Available]';
+                    row.innerHTML = `${num}. ${player.name} <span class="player-sponsor-inline">${spText}</span>`;
+                } else {
+                    row.innerHTML = `${num}. Empty Slot`;
+                }
+                subCol.appendChild(row);
+            }
 
-                if (player && player.sponsor && player.sponsor.toLowerCase() !== 'none' && player.sponsor !== '') {
-                    matchedSponsors.push(player.sponsor);
+            // 2. Fetch Lineup Poster Display Image Asset Configuration
+            const imgElement = document.getElementById('lineupPosterFeatureImage');
+            const mode = document.getElementById('lineupPhotoSourceMode').value;
+
+            if (mode === 'player') {
+                const targetRef = document.getElementById('lineupFeaturedPlayerSelect').value;
+                const variant = document.getElementById('lineupImageVariant').value;
+                
+                if (targetRef) {
+                    imgElement.src = `Images/${targetRef}/${variant}.jpg`;
+                    imgElement.style.display = 'block';
+                } else {
+                    imgElement.style.display = 'none';
+                }
+            } else {
+                const path = document.getElementById('lineupManualPhotoPath').value;
+                if (path) {
+                    imgElement.src = path;
+                    imgElement.style.display = 'block';
+                } else {
+                    imgElement.style.display = 'none';
                 }
             }
 
-            // Lineup Sponsor Text Compilation Loop
-            const lineupSponsorText = document.getElementById('lineupSponsorText');
-            if (matchedSponsors.length > 0) {
-                const uniqueSponsors = [...new Set(matchedSponsors)];
-                lineupSponsorText.innerHTML = uniqueSponsors.slice(0, 3).join(' / ');
-                lineupSponsorText.className = "sponsor-name";
-            } else {
-                lineupSponsorText.innerHTML = "SPONSORSHIP AVAILABLE";
-                lineupSponsorText.className = "sponsor-avail";
-            }
+            imgElement.onerror = function() {
+                imgElement.style.display = 'none';
+            };
         }
 
         function lockAndSyncEngine() {
@@ -548,8 +698,7 @@
                 if (picker.value !== "") {
                     const player = allPlayers.find(p => p.ref === picker.value);
                     if (player) {
-                        // Find matching shirt number assigned
-                        const idParts = picker.id.split('_'); // ['start', 'sel', '1']
+                        const idParts = picker.id.split('_');
                         const numInputId = `${idParts[0]}_num_${idParts[2]}`;
                         const shirtNum = document.getElementById(numInputId).value || '#';
                         
@@ -566,7 +715,7 @@
                 return;
             }
 
-            // Re-populate event tracking dropdown selectors using ONLY the locked squad pool
+            // Sync Match Event Dropdowns using ONLY locked matchday pool
             const eventDropdowns = document.querySelectorAll('.squad-dropdown');
             eventDropdowns.forEach(select => {
                 const currentId = select.id;
@@ -586,7 +735,12 @@
                 });
             });
 
-            alert(`Engine Confirmed! ${lockedSquad.length} roster elements synchronized to live notification event panels.`);
+            alert(`Engine Confirmed! ${lockedSquad.length} team members synchronized to live event alerts.`);
+        }
+
+        function syncAlertPhotoOption(type) {
+            // Evaluates and forces updates to match alerts instantly when fields change
+            generateMatchEvent(type);
         }
 
         function generateMatchEvent(type) {
@@ -597,12 +751,14 @@
             const photoImg = document.getElementById('eventPlayerPhoto');
             
             let focusPlayer = null;
+            let imageVariant = "HS";
 
             if (type === 'GOAL') {
                 header.textContent = "MATCH UPDATE";
                 hero.textContent = "GOAL!";
                 const scorerRef = document.getElementById('goalScorerSelect').value;
                 const assistRef = document.getElementById('goalAssistSelect').value;
+                imageVariant = document.getElementById('goalPhotoType').value;
                 
                 focusPlayer = lockedSquad.find(p => p.ref === scorerRef);
                 pText.textContent = focusPlayer ? focusPlayer.name.toUpperCase() : "PLAYER NAME";
@@ -616,9 +772,10 @@
                 hero.textContent = "SUBSTITUTION";
                 const offRef = document.getElementById('subOffSelect').value;
                 const onRef = document.getElementById('subOnSelect').value;
+                imageVariant = document.getElementById('subPhotoType').value;
 
                 const playerOff = lockedSquad.find(p => p.ref === offRef);
-                focusPlayer = lockedSquad.find(p => p.ref === onRef); // Target incoming player photo/sponsor
+                focusPlayer = lockedSquad.find(p => p.ref === onRef); 
 
                 pText.textContent = focusPlayer ? `ON: ${focusPlayer.name.toUpperCase()}` : "PLAYER ON";
                 dText.textContent = playerOff ? `OFF: ${playerOff.name}` : "PLAYER OFF";
@@ -628,6 +785,7 @@
                 header.textContent = "CRUCIAL MOMENT";
                 hero.textContent = "PENALTY SAVE!";
                 const gkRef = document.getElementById('gkSelect').value;
+                imageVariant = document.getElementById('savePhotoType').value;
 
                 focusPlayer = lockedSquad.find(p => p.ref === gkRef);
                 pText.textContent = focusPlayer ? focusPlayer.name.toUpperCase() : "GOALKEEPER";
@@ -635,21 +793,19 @@
                 dText.style.display = "inline-block";
             }
 
-            // Photo Mapping Integration Layer
+            // Display Match Alert Images matching \Images\WG[Ref] / [Variant].jpg
             if (focusPlayer) {
-                // Mimics image sorter folder naming pathway logic
-                photoImg.src = `Images/${focusPlayer.name}/1.jpg`;
+                photoImg.src = `Images/${focusPlayer.ref}/${imageVariant}.jpg`;
                 photoImg.style.display = "block";
-                
-                // Fallback catch if photo asset is missing entirely
-                photoImg.onerror = function() {
-                    photoImg.style.display = "none";
-                };
             } else {
                 photoImg.style.display = "none";
             }
 
-            // Sponsor Mapping Target Rules Engine Logic
+            photoImg.onerror = function() {
+                photoImg.style.display = "none";
+            };
+
+            // Process Match Alert Sponsors Layout 
             const nameTarget = document.getElementById('eventSponsorName');
             const labelTarget = document.getElementById('eventSponsorLabel');
             
