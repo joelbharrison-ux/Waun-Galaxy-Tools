@@ -116,18 +116,12 @@
                     
                     <div id="logo-match-badge" class="status-badge warning">System Idle</div>
                     
-                    <!-- Clean Localized Dropdown Menu -->
+                    <!-- Dynamic Dropdown Auto-Populated from GitHub Main branch -->
                     <div style="margin-top: 10px;">
                         <label style="color: #f59e0b;">📁 Select Backup Opponent File</label>
                         <select id="manual-opponent-logo-select" onchange="onManualOpponentLogoChange()">
                             <option value="AUTO">⚙️ Auto-Match via CSV Row</option>
-                            <option value="pontarddulais_town.png">pontarddulais_town.png</option>
-                            <option value="penlan_club.png">penlan_club.png</option>
-                            <option value="mumbles_rangers.png">mumbles_rangers.png</option>
-                            <option value="morriston_town.png">morriston_town.png</option>
-                            <option value="garden_village.png">garden_village.png</option>
-                            <option value="gorseinon_athletic.png">gorseinon_athletic.png</option>
-                            <option value="ynysygerwn.png">ynysygerwn.png</option>
+                            <option value="" disabled>Scanning main branch folder...</option>
                         </select>
                     </div>
                 </div>
@@ -194,14 +188,71 @@
         clubLogoImg.onload = () => updateCanvasPreview();
         opponentLogoImg.onload = () => updateCanvasPreview();
         opponentLogoImg.onerror = () => {
-            console.warn("Opponent image could not be resolved from local path relative to repository layout.");
+            console.warn("Opponent image could not be resolved from relative repository path.");
             updateCanvasPreview();
         };
 
         window.addEventListener('load', () => {
             loadFixturesCSVFile();
+            scanGitHubMainBranchImages();
             setupColorChangeListeners();
         });
+
+        // Automatically fetches the real folder contents directly from GitHub's main branch API
+        function scanGitHubMainBranchImages() {
+            const dropdown = document.getElementById('manual-opponent-logo-select');
+            
+            // Extract username and repository automatically from the current pages' GitHub Pages URL structure
+            // Format fallback handles local environments safely
+            let username = "YOUR_USERNAME";
+            let repo = "YOUR_REPO";
+            
+            if (window.location.hostname.includes("github.io")) {
+                const pathParts = window.location.pathname.split('/');
+                username = window.location.hostname.split('.')[0];
+                repo = pathParts[1];
+            } else {
+                // If running locally or on custom domain, update these values or let it slide
+                // To be absolute, you can hardcode them here if needed, but it extracts them live on GitHub pages.
+                username = window.location.pathname.split('/')[1] || "WaunarlwyddGalaxy"; 
+                repo = window.location.pathname.split('/')[2] || "media-engine";
+            }
+
+            const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/Images/Club%20Images?ref=main`;
+
+            fetch(apiUrl)
+                .then(res => {
+                    if(!res.ok) throw new Error("Could not map GitHub directory contents API");
+                    return res.json();
+                })
+                .then(data => {
+                    // Pull only image files
+                    const imageFiles = data.filter(item => /\.(png|jpg|jpeg|webp|svg)$/i.test(item.name));
+                    
+                    // Reset dropdown layout options safely
+                    dropdown.innerHTML = '<option value="AUTO">⚙️ Auto-Match via CSV Row</option>';
+                    
+                    imageFiles.forEach(file => {
+                        let opt = document.createElement('option');
+                        opt.value = file.name;
+                        opt.textContent = file.name;
+                        dropdown.appendChild(opt);
+                    });
+                })
+                .catch(err => {
+                    console.error("Could not dynamic-scan GitHub branch directory trees: ", err);
+                    // Minimal robust fallback inside the interface if API throttling limits hit
+                    dropdown.innerHTML = `
+                        <option value="AUTO">⚙️ Auto-Match via CSV Row</option>
+                        <option value="pontarddulais_town.png">pontarddulais_town.png</option>
+                        <option value="penlan_club.png">penlan_club.png</option>
+                        <option value="mumbles_rangers.png">mumbles_rangers.png</option>
+                        <option value="morriston_town.png">morriston_town.png</option>
+                        <option value="garden_village.png">garden_village.png</option>
+                        <option value="gorseinon_athletic.png">gorseinon_athletic.png</option>
+                    `;
+                });
+        }
 
         function loadFixturesCSVFile() {
             const statusBox = document.getElementById('skimming-status');
@@ -331,7 +382,7 @@
                 badge.textContent = "Override Engaged: Forced Selection";
             }
 
-            // Clean direct relative file asset mapping path structures
+            // Using pure relative asset configuration mappings
             pathLabel.textContent = `Images/Club Images/${finalTargetFileName}`;
             opponentLogoImg.src = `Images/Club Images/${finalTargetFileName}`;
         }
