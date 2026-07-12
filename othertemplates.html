@@ -82,6 +82,10 @@
                 </div>
                 <label>Our Club Identity Name</label>
                 <input type="text" id="club-name" value="Waunarlwydd Galaxy">
+                <label>Our Fixed Brand Crest Asset Path</label>
+                <div style="font-family: monospace; font-size: 12px; background:#121824; padding:8px; border-radius:6px; border:1px solid var(--border-color); color: var(--success)">
+                    Images\Club Images\WaunG.png
+                </div>
             </div>
 
             <!-- Global Pipeline Configuration Selector -->
@@ -110,12 +114,10 @@
                     </div>
                     <div id="logo-match-badge" class="status-badge success">Directory File Check</div>
                     
-                    <div id="fallback-logo-container" class="hidden">
-                        <label style="color:var(--warning);">Manual Fallback Selection</label>
-                        <select id="fallback-logo-select" onchange="updateCanvasPreview()">
-                            <option value="generic_crest.png">Use Default Generic Crest Placeholder</option>
-                            <option value="alternative_shield.png">Alternative Shield Shape Template</option>
-                            <option value="custom_stripe.png">Striped Monogram Badge Overlay</option>
+                    <div id="manual-logo-container" style="margin-top: 8px;">
+                        <label>Target Opponent Photo Manual Override</label>
+                        <select id="manual-opponent-logo-select" onchange="onManualOpponentLogoChange()">
+                            <!-- Populated with common file targets; add/edit string array names inside script block below -->
                         </select>
                     </div>
                 </div>
@@ -169,28 +171,63 @@
     </div>
 
     <script>
-        // Array parsed dynamically from the fixtures.csv file
         let mockFixturesCSV = [];
-        const simulatedAvailableLogos = ["riverside_fc.png", "apex_united.png"];
+        
+        // Define list of common opponent logo file images inside your folder
+        const localFolderLogosList = [
+            "riverside_fc.png", 
+            "apex_united.png", 
+            "starr_rangers_sc.png",
+            "generic_crest.png",
+            "alternative_shield.png"
+        ];
 
         let systemMode = 'csv'; 
         const canvas = document.getElementById('clubMediaCanvas');
         const ctx = canvas.getContext('2d');
 
+        // Image pre-caching references
+        let clubLogoImg = new Image();
+        let opponentLogoImg = new Image();
+        
+        // Setup initial default image layers safely
+        clubLogoImg.src = 'Images/Club Images/WaunG.png';
+        
+        // Make sure preview redraws automatically when images finish downloading locally
+        clubLogoImg.onload = () => updateCanvasPreview();
+        opponentLogoImg.onload = () => updateCanvasPreview();
+
         window.addEventListener('load', () => {
+            populateManualLogoDropdown();
             loadFixturesCSVFile();
             setupColorChangeListeners();
         });
 
-        // Dynamic file pipeline loader fetching directly from your workspace folder
+        function populateManualLogoDropdown() {
+            const dropdown = document.getElementById('manual-opponent-logo-select');
+            dropdown.innerHTML = '';
+            
+            // Auto-Map Option
+            let autoOpt = document.createElement('option');
+            autoOpt.value = "AUTO";
+            autoOpt.textContent = "⚙️ Attempt Auto-Map matching CSV name";
+            dropdown.appendChild(autoOpt);
+
+            // Append specific file selections
+            localFolderLogosList.forEach(fileName => {
+                let opt = document.createElement('option');
+                opt.value = fileName;
+                opt.textContent = fileName;
+                dropdown.appendChild(opt);
+            });
+        }
+
         function loadFixturesCSVFile() {
             const statusBox = document.getElementById('skimming-status');
             
             fetch('fixtures.csv')
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error("Could not detect fixtures.csv file in folder.");
-                    }
+                    if (!response.ok) throw new Error("Could not locate fixtures.csv");
                     return response.text();
                 })
                 .then(text => {
@@ -201,37 +238,31 @@
                 .catch(error => {
                     console.error(error);
                     statusBox.className = "status-badge danger";
-                    statusBox.textContent = "Error: fixtures.csv not found in this folder!";
+                    statusBox.textContent = "Error: fixtures.csv not detected in folder.";
                     
-                    // Fail-safe mock injection so the canvas doesn't crash if the file is physically missing
-                    mockFixturesCSV = [{ "Date": "No File Found", "Time": "00:00", "Opponent": "Missing CSV File", "Venue": "Home", "Team Competition": "Setup Required", "Home score": "", "Away score": "", "Scorers": "" }];
+                    mockFixturesCSV = [{ "Date": "No CSV Found", "Time": "00:00", "Opponent": "Missing File", "Venue": "Home", "Team Competition": "Setup Required", "Home score": "", "Away score": "", "Scorers": "" }];
                     populateCSVSelectorOptions();
                     updateCanvasPreview();
                 });
         }
 
-        // Lightweight structural parser splitting rows safely by column headers
         function parseCSVDataMatrix(csvText) {
             const lines = csvText.split(/\r?\n/);
             if (lines.length === 0) return;
             
-            // Extract and clean headers
             const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
             mockFixturesCSV = [];
 
             for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue; // Skip empty rows
-                
-                // Matches standard commas while respecting double quoted fields
+                if (!lines[i].trim()) continue;
                 const matches = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || lines[i].split(',');
                 const rowData = {};
                 
                 headers.forEach((header, index) => {
                     let val = matches[index] ? matches[index].trim() : "";
-                    val = val.replace(/^["']|["']$/g, ''); // Strip quotes
+                    val = val.replace(/^["']|["']$/g, '');
                     rowData[header] = val;
                 });
-                
                 mockFixturesCSV.push(rowData);
             }
         }
@@ -240,18 +271,11 @@
             const selector = document.getElementById('csv-row-selector');
             selector.innerHTML = '';
             
-            if(mockFixturesCSV.length === 0) {
-                let option = document.createElement('option');
-                option.textContent = "No data rows parsed.";
-                selector.appendChild(option);
-                return;
-            }
-
             mockFixturesCSV.forEach((row, index) => {
-                let statusInfo = (row["Home score"] && row["Home score"] !== "") ? `[RESULT: ${row["Home score"]}-${row["Away score"]}]` : "[UPCOMING MATCH]";
+                let statusInfo = (row["Home score"] && row["Home score"] !== "") ? `[RESULT: ${row["Home score"]}-${row["Away score"]}]` : "[UPCOMING]";
                 let option = document.createElement('option');
                 option.value = index;
-                option.textContent = `${row.Date || 'N/A'} - ${row.Opponent || 'Unknown Opponent'} ${statusInfo}`;
+                option.textContent = `${row.Date || 'N/A'} - ${row.Opponent || 'Unknown'} ${statusInfo}`;
                 selector.appendChild(option);
             });
         }
@@ -280,69 +304,79 @@
 
         function onManualTypeChange() {
             const type = document.getElementById('manual-template-type').value;
-            if(type === 'signing') {
-                document.getElementById('fields-signing').classList.remove('hidden');
-                document.getElementById('fields-sponsorship').classList.add('hidden');
-            } else {
-                document.getElementById('fields-signing').classList.add('hidden');
-                document.getElementById('fields-sponsorship').classList.remove('hidden');
-            }
+            document.getElementById('fields-signing').classList.toggle('hidden', type !== 'signing');
+            document.getElementById('fields-sponsorship').classList.toggle('hidden', type !== 'sponsorship');
             updateCanvasPreview();
         }
 
         function resizeMediaCanvas() {
             const ratio = document.getElementById('canvas-aspect').value;
-            if(ratio === '1:1') {
-                canvas.width = 1080;
-                canvas.height = 1080;
-            } else {
-                canvas.width = 1080;
-                canvas.height = 1920;
-            }
+            canvas.width = 1080;
+            canvas.height = (ratio === '1:1') ? 1080 : 1920;
             updateCanvasPreview();
         }
 
-        function checkOpponentAssetResolution(opponentName) {
-            if (!opponentName) return false;
-            const expectedFileName = opponentName.toLowerCase().replace(/\s+/g, '_') + '.png';
+        function resolveOpponentImagePipeline(opponentName) {
+            if (!opponentName) return;
+            
+            const manualDropdownValue = document.getElementById('manual-opponent-logo-select').value;
             const pathLabel = document.getElementById('logo-path-indicator');
             const badge = document.getElementById('logo-match-badge');
-            const fallbackSelector = document.getElementById('fallback-logo-container');
-            
-            pathLabel.textContent = `Images\\Club Images\\${expectedFileName}`;
 
-            if(simulatedAvailableLogos.includes(expectedFileName)) {
-                badge.className = "status-badge success";
-                badge.textContent = "Asset Located Successfully (Auto-Mapped)";
-                fallbackSelector.classList.add('hidden');
-                return true;
+            let finalTargetFileName = "";
+
+            if (manualDropdownValue === "AUTO") {
+                // Generate lower_snake_case file targets automatically from opponent title text
+                finalTargetFileName = opponentName.toLowerCase().replace(/\s+/g, '_') + '.png';
+                
+                if (localFolderLogosList.includes(finalTargetFileName)) {
+                    badge.className = "status-badge success";
+                    badge.textContent = "Asset Automatically Matched";
+                } else {
+                    badge.className = "status-badge warning";
+                    badge.textContent = "Asset Path Empty - Overriding manually below";
+                    // Default fallback if text conversion yields missing file paths
+                    finalTargetFileName = "generic_crest.png";
+                }
             } else {
-                badge.className = "status-badge warning";
-                badge.textContent = "Resource Path Empty - Select Fallback Asset";
-                fallbackSelector.classList.remove('hidden');
-                return false;
+                // Manual User Dropdown Override
+                finalTargetFileName = manualDropdownValue;
+                badge.className = "status-badge info";
+                badge.textContent = "Manual Graphic Override Selection Active";
             }
+
+            pathLabel.textContent = `Images\\Club Images\\${finalTargetFileName}`;
+            opponentLogoImg.src = `Images/Club Images/${finalTargetFileName}`;
         }
 
         function onFixtureRowChange() {
             if (mockFixturesCSV.length === 0) return;
-            
             const selectedIdx = document.getElementById('csv-row-selector').value;
             const rowData = mockFixturesCSV[selectedIdx];
             if (!rowData) return;
             
-            checkOpponentAssetResolution(rowData.Opponent);
+            resolveOpponentImagePipeline(rowData.Opponent);
 
             const statusBox = document.getElementById('skimming-status');
             if (rowData["Home score"] && rowData["Home score"] !== "") {
                 statusBox.className = "status-badge success";
-                statusBox.textContent = "Data Detected: Rendering Match Result Screen Layout";
+                statusBox.textContent = "Data Detected: Result Layout Engine";
             } else {
                 statusBox.className = "status-badge info";
-                statusBox.textContent = "Data Evaluated: Upcoming Fixture Window Mode Engaged";
+                statusBox.textContent = "Data Evaluated: Upcoming Match Layout Engine";
             }
-
             updateCanvasPreview();
+        }
+
+        function onManualOpponentLogoChange() {
+            if (mockFixturesCSV.length === 0) return;
+            const selectedIdx = document.getElementById('csv-row-selector').value;
+            const rowData = mockFixturesCSV[selectedIdx];
+            if (rowData) {
+                resolveOpponentImagePipeline(rowData.Opponent);
+            } else {
+                updateCanvasPreview();
+            }
         }
 
         function updateCanvasPreview() {
@@ -401,10 +435,12 @@
             ctx.font = "900 32px Arial";
             ctx.fillText((row["Team Competition"] || "MATCH DAY").toUpperCase(), canvas.width / 2, canvas.height * 0.22);
 
-            drawMockCrest(canvas.width * 0.25, canvas.height * 0.4, clubName.substring(0,2).toUpperCase(), accent);
+            // Draw our hardcoded club identity logo layer
+            drawAssetCrestImage(canvas.width * 0.25, canvas.height * 0.4, clubLogoImg, clubName.substring(0,2).toUpperCase(), accent);
             
+            // Draw opponent image selection layer
             const oppName = row.Opponent || "Unknown";
-            drawMockCrest(canvas.width * 0.75, canvas.height * 0.4, oppName.substring(0,2).toUpperCase(), "#ffffff");
+            drawAssetCrestImage(canvas.width * 0.75, canvas.height * 0.4, opponentLogoImg, oppName.substring(0,2).toUpperCase(), "#ffffff");
 
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 38px Arial";
@@ -433,10 +469,10 @@
             ctx.font = "900 32px Arial";
             ctx.fillText((row["Team Competition"] || "MATCH DAY").toUpperCase(), canvas.width / 2, canvas.height * 0.22);
 
-            drawMockCrest(canvas.width * 0.25, canvas.height * 0.4, clubName.substring(0,2).toUpperCase(), accent);
+            drawAssetCrestImage(canvas.width * 0.25, canvas.height * 0.4, clubLogoImg, clubName.substring(0,2).toUpperCase(), accent);
             
             const oppName = row.Opponent || "Unknown";
-            drawMockCrest(canvas.width * 0.75, canvas.height * 0.4, oppName.substring(0,2).toUpperCase(), "#ffffff");
+            drawAssetCrestImage(canvas.width * 0.75, canvas.height * 0.4, opponentLogoImg, oppName.substring(0,2).toUpperCase(), "#ffffff");
 
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 38px Arial";
@@ -532,31 +568,38 @@
             ctx.fillText(sTier.toUpperCase(), canvas.width / 2, canvas.height * 0.82);
         }
 
-        function drawMockCrest(x, y, initials, color) {
+        // Tries rendering actual file images, falls back cleanly to drawn text badges if missing
+        function drawAssetCrestImage(x, y, imgObject, fallbackInitials, fallbackColor) {
             ctx.save();
             ctx.translate(x, y);
-            
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.moveTo(0, -80);
-            ctx.lineTo(70, -40);
-            ctx.lineTo(70, 40);
-            ctx.lineTo(0, 90);
-            ctx.lineTo(-70, 40);
-            ctx.lineTo(-70, -40);
-            ctx.closePath();
-            ctx.fill();
-            
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 4;
-            ctx.stroke();
 
-            ctx.fillStyle = (color === "#ffffff") ? "#111827" : "#ffffff";
-            ctx.font = "bold 36px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(initials, 0, 0);
-            
+            if (imgObject.complete && imgObject.naturalWidth !== 0) {
+                // Image file loaded successfully -> render onto canvas
+                const size = 160;
+                ctx.drawImage(imgObject, -size / 2, -size / 2, size, size);
+            } else {
+                // Fallback graphic generation
+                ctx.fillStyle = fallbackColor;
+                ctx.beginPath();
+                ctx.moveTo(0, -80);
+                ctx.lineTo(70, -40);
+                ctx.lineTo(70, 40);
+                ctx.lineTo(0, 90);
+                ctx.lineTo(-70, 40);
+                ctx.lineTo(-70, -40);
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                ctx.fillStyle = (fallbackColor === "#ffffff") ? "#111827" : "#ffffff";
+                ctx.font = "bold 36px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(fallbackInitials, 0, 0);
+            }
             ctx.restore();
         }
 
