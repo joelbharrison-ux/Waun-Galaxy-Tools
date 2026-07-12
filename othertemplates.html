@@ -41,6 +41,7 @@
         .status-badge.success { background: rgba(16, 185, 129, 0.15); color: var(--success); }
         .status-badge.warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
         .status-badge.info { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .status-badge.danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
 
         .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
         .tab-btn { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 10px; color: var(--text-muted); font-weight: 600; border-radius: 6px; cursor: pointer; font-size: 13px; text-align: center; }
@@ -97,10 +98,10 @@
                 <div class="section-title">Data Ingestion Engine</div>
                 <label>Select CSV Live Record Feed Row</label>
                 <select id="csv-row-selector" onchange="onFixtureRowChange()">
-                    <!-- Populated dynamically via script execution -->
+                    <option value="">Loading fixtures.csv...</option>
                 </select>
 
-                <div id="skimming-status" class="status-badge info">Mode: Monitoring Data Columns</div>
+                <div id="skimming-status" class="status-badge info">Mode: Connecting to Data File</div>
                 
                 <div id="logo-status-box" style="margin-top: 8px;">
                     <label>Opponent Directory Resolution Target Path</label>
@@ -168,40 +169,8 @@
     </div>
 
     <script>
-        // Restored key property maps safely to "Opponent" column header definitions
-        const mockFixturesCSV = [
-            {
-                "Date": "2026-07-18",
-                "Time": "15:00",
-                "Opponent": "Riverside FC",
-                "Venue": "Home",
-                "Team Competition": "Premier League Division 1",
-                "Home score": "", 
-                "Away score": "",
-                "Scorers": ""
-            },
-            {
-                "Date": "2026-07-05",
-                "Time": "19:45",
-                "Opponent": "Apex United",
-                "Venue": "Away",
-                "Team Competition": "Regional Challenge Cup",
-                "Home score": "1", 
-                "Away score": "4",
-                "Scorers": "Sterling 14', Miller 55', Vance 89'"
-            },
-            {
-                "Date": "2026-07-26",
-                "Time": "14:00",
-                "Opponent": "Starr Rangers SC",
-                "Venue": "Home",
-                "Team Competition": "Premier League Division 1",
-                "Home score": "", 
-                "Away score": "",
-                "Scorers": ""
-            }
-        ];
-
+        // Array parsed dynamically from the fixtures.csv file
+        let mockFixturesCSV = [];
         const simulatedAvailableLogos = ["riverside_fc.png", "apex_united.png"];
 
         let systemMode = 'csv'; 
@@ -209,20 +178,80 @@
         const ctx = canvas.getContext('2d');
 
         window.addEventListener('load', () => {
-            populateCSVSelectorOptions();
+            loadFixturesCSVFile();
             setupColorChangeListeners();
-            onFixtureRowChange(); 
         });
+
+        // Dynamic file pipeline loader fetching directly from your workspace folder
+        function loadFixturesCSVFile() {
+            const statusBox = document.getElementById('skimming-status');
+            
+            fetch('fixtures.csv')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Could not detect fixtures.csv file in folder.");
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    parseCSVDataMatrix(text);
+                    populateCSVSelectorOptions();
+                    onFixtureRowChange();
+                })
+                .catch(error => {
+                    console.error(error);
+                    statusBox.className = "status-badge danger";
+                    statusBox.textContent = "Error: fixtures.csv not found in this folder!";
+                    
+                    // Fail-safe mock injection so the canvas doesn't crash if the file is physically missing
+                    mockFixturesCSV = [{ "Date": "No File Found", "Time": "00:00", "Opponent": "Missing CSV File", "Venue": "Home", "Team Competition": "Setup Required", "Home score": "", "Away score": "", "Scorers": "" }];
+                    populateCSVSelectorOptions();
+                    updateCanvasPreview();
+                });
+        }
+
+        // Lightweight structural parser splitting rows safely by column headers
+        function parseCSVDataMatrix(csvText) {
+            const lines = csvText.split(/\r?\n/);
+            if (lines.length === 0) return;
+            
+            // Extract and clean headers
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+            mockFixturesCSV = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue; // Skip empty rows
+                
+                // Matches standard commas while respecting double quoted fields
+                const matches = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || lines[i].split(',');
+                const rowData = {};
+                
+                headers.forEach((header, index) => {
+                    let val = matches[index] ? matches[index].trim() : "";
+                    val = val.replace(/^["']|["']$/g, ''); // Strip quotes
+                    rowData[header] = val;
+                });
+                
+                mockFixturesCSV.push(rowData);
+            }
+        }
 
         function populateCSVSelectorOptions() {
             const selector = document.getElementById('csv-row-selector');
             selector.innerHTML = '';
+            
+            if(mockFixturesCSV.length === 0) {
+                let option = document.createElement('option');
+                option.textContent = "No data rows parsed.";
+                selector.appendChild(option);
+                return;
+            }
+
             mockFixturesCSV.forEach((row, index) => {
-                let statusInfo = (row["Home score"] !== "") ? `[RESULT: ${row["Home score"]}-${row["Away score"]}]` : "[UPCOMING MATCH]";
+                let statusInfo = (row["Home score"] && row["Home score"] !== "") ? `[RESULT: ${row["Home score"]}-${row["Away score"]}]` : "[UPCOMING MATCH]";
                 let option = document.createElement('option');
                 option.value = index;
-                // Correctly referencing row.Opponent here
-                option.textContent = `${row.Date} - ${row.Opponent} ${statusInfo}`;
+                option.textContent = `${row.Date || 'N/A'} - ${row.Opponent || 'Unknown Opponent'} ${statusInfo}`;
                 selector.appendChild(option);
             });
         }
@@ -273,7 +302,6 @@
             updateCanvasPreview();
         }
 
-        // Corrected path resolution targeting row.Opponent data field
         function checkOpponentAssetResolution(opponentName) {
             if (!opponentName) return false;
             const expectedFileName = opponentName.toLowerCase().replace(/\s+/g, '_') + '.png';
@@ -297,16 +325,18 @@
         }
 
         function onFixtureRowChange() {
+            if (mockFixturesCSV.length === 0) return;
+            
             const selectedIdx = document.getElementById('csv-row-selector').value;
             const rowData = mockFixturesCSV[selectedIdx];
+            if (!rowData) return;
             
-            // Runs resolution pipeline using corrected Opponent data column
             checkOpponentAssetResolution(rowData.Opponent);
 
             const statusBox = document.getElementById('skimming-status');
-            if (rowData["Home score"] !== "" && rowData["Away score"] !== "") {
+            if (rowData["Home score"] && rowData["Home score"] !== "") {
                 statusBox.className = "status-badge success";
-                statusBox.textContent = "Data Detected: Rendering Match Result Media Screen Layout";
+                statusBox.textContent = "Data Detected: Rendering Match Result Screen Layout";
             } else {
                 statusBox.className = "status-badge info";
                 statusBox.textContent = "Data Evaluated: Upcoming Fixture Window Mode Engaged";
@@ -341,10 +371,12 @@
             ctx.globalAlpha = 1.0; 
 
             if (systemMode === 'csv') {
+                if (mockFixturesCSV.length === 0) return;
                 const selectedIdx = document.getElementById('csv-row-selector').value;
                 const rowData = mockFixturesCSV[selectedIdx];
+                if (!rowData) return;
                 
-                if (rowData["Home score"] !== "" && rowData["Away score"] !== "") {
+                if (rowData["Home score"] && rowData["Home score"] !== "") {
                     renderMatchResultLayout(rowData, clubName, accentColor);
                 } else {
                     renderUpcomingFixtureLayout(rowData, clubName, accentColor);
@@ -367,7 +399,7 @@
 
             ctx.fillStyle = accent;
             ctx.font = "900 32px Arial";
-            ctx.fillText(row["Team Competition"].toUpperCase(), canvas.width / 2, canvas.height * 0.22);
+            ctx.fillText((row["Team Competition"] || "MATCH DAY").toUpperCase(), canvas.width / 2, canvas.height * 0.22);
 
             drawMockCrest(canvas.width * 0.25, canvas.height * 0.4, clubName.substring(0,2).toUpperCase(), accent);
             
@@ -386,9 +418,9 @@
             let detailsY = canvas.height * 0.72;
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 34px Arial";
-            ctx.fillText(`VENUE: ${row.Venue.toUpperCase()} GROUND`, canvas.width / 2, detailsY);
-            ctx.fillText(`DATE: ${row.Date}`, canvas.width / 2, detailsY + 60);
-            ctx.fillText(`KICK-OFF TIME: ${row.Time}`, canvas.width / 2, detailsY + 120);
+            ctx.fillText(`VENUE: ${(row.Venue || 'Home').toUpperCase()} GROUND`, canvas.width / 2, detailsY);
+            ctx.fillText(`DATE: ${row.Date || 'TBD'}`, canvas.width / 2, detailsY + 60);
+            ctx.fillText(`KICK-OFF TIME: ${row.Time || 'TBD'}`, canvas.width / 2, detailsY + 120);
         }
 
         function renderMatchResultLayout(row, clubName, accent) {
@@ -399,7 +431,7 @@
 
             ctx.fillStyle = accent;
             ctx.font = "900 32px Arial";
-            ctx.fillText(row["Team Competition"].toUpperCase(), canvas.width / 2, canvas.height * 0.22);
+            ctx.fillText((row["Team Competition"] || "MATCH DAY").toUpperCase(), canvas.width / 2, canvas.height * 0.22);
 
             drawMockCrest(canvas.width * 0.25, canvas.height * 0.4, clubName.substring(0,2).toUpperCase(), accent);
             
@@ -427,7 +459,7 @@
 
             ctx.fillStyle = accent;
             ctx.font = "bold 28px Arial";
-            ctx.fillText(`Match Records Saved at: ${row.Venue} Arena`, canvas.width / 2, canvas.height * 0.88);
+            ctx.fillText(`Match Records Saved at: ${row.Venue || 'Stadium'}`, canvas.width / 2, canvas.height * 0.88);
         }
 
         function renderPlayerSigningLayout(clubName, accent) {
