@@ -140,7 +140,7 @@
                     <label>Player Name</label>
                     <input type="text" id="player-name" value="Marcus Sterling" oninput="updateCanvasPreview()">
                     <label>Position / Role</label>
-                    <input type="text" id="player-position" value="Central Attacking Midfielder" oninput="updateCanvasPreview()">
+                    <input type="text" id="player-position" value="Central Attacking Midfielder" oninput="oninput="updateCanvasPreview()">
                     <label>Squad Number assignment</label>
                     <input type="text" id="player-number" value="10" oninput="updateCanvasPreview()">
                 </div>
@@ -175,13 +175,6 @@
     </div>
 
     <script>
-        // =========================================================================
-        // 🛠️ SET YOUR GITHUB DETAILS HERE SO THE API CAN FIND THE FILE NAMES
-        // =========================================================================
-        const REPO_OWNER = "WaunarlwyddGalaxy"; // Change to your GitHub Username/Organization
-        const REPO_NAME = "media-engine";        // Change to your GitHub Repository Name
-        // =========================================================================
-
         let mockFixturesCSV = [];
         let systemMode = 'csv'; 
         const canvas = document.getElementById('clubMediaCanvas');
@@ -205,24 +198,60 @@
             setupColorChangeListeners();
         });
 
-        // Fetches the exact file names inside Images/Club Images via GitHub API using main branch
+        // Fully automated location inspector rules
+        function getRepoMetadata() {
+            let owner = "WaunarlwyddGalaxy";
+            let repo = "media-engine";
+            
+            const hostname = window.location.hostname;
+            const pathname = window.location.pathname;
+
+            // Scenario A: Standard github.io domain hosting structure
+            if (hostname.includes("github.io")) {
+                owner = hostname.split('.')[0];
+                const parts = pathname.split('/').filter(p => p.length > 0);
+                if (parts.length > 0) {
+                    repo = parts[0];
+                }
+            } 
+            // Scenario B: Live repository file viewing views (raw code, preview tools or environments)
+            else if (pathname.includes("/blob/") || pathname.includes("/raw/")) {
+                const parts = pathname.split('/').filter(p => p.length > 0);
+                if (parts.length >= 2) {
+                    owner = parts[0];
+                    repo = parts[1];
+                }
+            }
+            // Scenario C: Generic subfolder handling configurations 
+            else {
+                const parts = pathname.split('/').filter(p => p.length > 0);
+                if (parts.length >= 2) {
+                    owner = parts[0];
+                    repo = parts[1];
+                }
+            }
+            
+            return { owner, repo };
+        }
+
         function scanGitHubMainBranchImages() {
             const dropdown = document.getElementById('manual-opponent-logo-select');
-            const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/Images/Club%20Images?ref=main`;
+            const meta = getRepoMetadata();
+            
+            console.log(`Auto-detected Repository Location Matrix: Owner="${meta.owner}", Repo="${meta.repo}"`);
+            
+            const apiUrl = `https://api.github.com/repos/${meta.owner}/${meta.repo}/contents/Images/Club%20Images?ref=main`;
 
             fetch(apiUrl)
                 .then(res => {
-                    if(!res.ok) throw new Error("Could not map GitHub directory contents API");
+                    if(!res.ok) throw new Error(`HTTP Error response from API framework: ${res.status}`);
                     return res.json();
                 })
                 .then(data => {
-                    // Filter exclusively for common image extensions
                     const imageFiles = data.filter(item => /\.(png|jpg|jpeg|webp|svg)$/i.test(item.name));
                     
-                    // Clear out placeholder text safely
                     dropdown.innerHTML = '<option value="AUTO">⚙️ Auto-Match via CSV Row</option>';
                     
-                    // Populate dropdown using the EXACT file names returned from GitHub
                     imageFiles.forEach(file => {
                         let opt = document.createElement('option');
                         opt.value = file.name;
@@ -230,14 +259,13 @@
                         dropdown.appendChild(opt);
                     });
                     
-                    // Trigger a check to load the image for the current row
                     onFixtureRowChange();
                 })
                 .catch(err => {
-                    console.error("Could not dynamically scan GitHub branch directory: ", err);
+                    console.error("Could not dynamic-scan GitHub branch directory trees: ", err);
                     dropdown.innerHTML = `
                         <option value="AUTO">⚙️ Auto-Match via CSV Row</option>
-                        <option value="" disabled>❌ Scan failed. Check REPO_OWNER and REPO_NAME in script script</option>
+                        <option value="" disabled>❌ Scan failed. Ensure file is hosted on GitHub or check repo visibility.</option>
                     `;
                 });
         }
@@ -322,7 +350,6 @@
             document.getElementById('club-name').addEventListener('input', updateCanvasPreview);
         }
 
-        // Sets up clean background toggles between CSV data tracking modes and general manual overlays
         function setMode(mode) {
             systemMode = mode;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -362,7 +389,6 @@
 
             if (manualDropdownValue === "AUTO") {
                 if (!opponentName) return;
-                // Formats opponent name to match common standard lower_case files (e.g., "Pontarddulais Town" -> "pontarddulais_town.png")
                 finalTargetFileName = opponentName.toLowerCase().replace(/\s+/g, '_') + '.png';
                 badge.className = "status-badge success";
                 badge.textContent = "Auto Mode: Linked to CSV Value";
@@ -372,7 +398,6 @@
                 badge.textContent = "Override Engaged: Forced Selection";
             }
 
-            // Using pure relative asset configuration mappings
             pathLabel.textContent = `Images/Club Images/${finalTargetFileName}`;
             opponentLogoImg.src = `Images/Club Images/${finalTargetFileName}`;
         }
