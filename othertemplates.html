@@ -59,7 +59,7 @@
 
     <header>
         <h1>Club Media &amp; Announcement Canvas Engine</h1>
-        <p>Dynamic media engine scanning GitHub repository directories directly for live graphic streams.</p>
+        <p>Dynamic media engine reading direct repository data matrix layers using relative asset positioning.</p>
     </header>
 
     <div class="app-container">
@@ -82,7 +82,7 @@
                 <input type="text" id="club-name" value="Waunarlwydd Galaxy">
                 <label>Our Fixed Brand Crest Asset Path</label>
                 <div style="font-family: monospace; font-size: 12px; background:#121824; padding:8px; border-radius:6px; border:1px solid var(--border-color); color: var(--success)">
-                    WaunG.png (Main Root Folder)
+                    WaunG.png (Main Folder Target)
                 </div>
             </div>
 
@@ -107,21 +107,27 @@
                 
                 <!-- Asset Configuration Diagnostics Panel -->
                 <div style="margin-top: 10px; padding: 12px; background: var(--bg-primary); border-radius: 6px; border: 1px solid var(--border-color);">
-                    <div class="section-title" style="font-size: 11px;">GitHub Asset Synchronization</div>
+                    <div class="section-title" style="font-size: 11px;">Image Resource Management</div>
                     
                     <label>Target Opponent Path:</label>
-                    <div id="logo-path-indicator" style="font-family: monospace; font-size: 11px; margin-bottom: 8px; color: var(--text-muted); word-break: break-all;">
-                        Scanning GitHub...
+                    <div id="logo-path-indicator" style="font-family: monospace; font-size: 11px; margin-bottom: 8px; color: var(--text-muted);">
+                        Images/Club Images/
                     </div>
                     
                     <div id="logo-match-badge" class="status-badge warning">System Idle</div>
                     
-                    <!-- Dynamic Dropdown Population -->
+                    <!-- Clean Localized Dropdown Menu -->
                     <div style="margin-top: 10px;">
-                        <label style="color: #f59e0b;">📁 Scan / Select Backup Opponent File</label>
+                        <label style="color: #f59e0b;">📁 Select Backup Opponent File</label>
                         <select id="manual-opponent-logo-select" onchange="onManualOpponentLogoChange()">
                             <option value="AUTO">⚙️ Auto-Match via CSV Row</option>
-                            <option value="" disabled>Scanning Images/Club Images folder...</option>
+                            <option value="pontarddulais_town.png">pontarddulais_town.png</option>
+                            <option value="penlan_club.png">penlan_club.png</option>
+                            <option value="mumbles_rangers.png">mumbles_rangers.png</option>
+                            <option value="morriston_town.png">morriston_town.png</option>
+                            <option value="garden_village.png">garden_village.png</option>
+                            <option value="gorseinon_athletic.png">gorseinon_athletic.png</option>
+                            <option value="ynysygerwn.png">ynysygerwn.png</option>
                         </select>
                     </div>
                 </div>
@@ -175,14 +181,6 @@
     </div>
 
     <script>
-        // ==========================================
-        // ⚠️ EDIT YOUR GITHUB REPOSITORY CONFIG HERE
-        // ==========================================
-        const GITHUB_USER = "YOUR_GITHUB_USERNAME";
-        const GITHUB_REPO = "YOUR_REPO_NAME";
-        const GITHUB_BRANCH = "main"; 
-        // ==========================================
-
         let mockFixturesCSV = [];
         let systemMode = 'csv'; 
         const canvas = document.getElementById('clubMediaCanvas');
@@ -191,54 +189,19 @@
         let clubLogoImg = new Image();
         let opponentLogoImg = new Image();
         
-        // Handle CORS configurations for GitHub images inside HTML Canvas
-        clubLogoImg.crossOrigin = "anonymous";
-        opponentLogoImg.crossOrigin = "anonymous";
-
         clubLogoImg.src = 'WaunG.png';
         
         clubLogoImg.onload = () => updateCanvasPreview();
         opponentLogoImg.onload = () => updateCanvasPreview();
         opponentLogoImg.onerror = () => {
-            console.warn("Opponent graphic could not be resolved from remote source.");
+            console.warn("Opponent image could not be resolved from local path relative to repository layout.");
             updateCanvasPreview();
         };
 
         window.addEventListener('load', () => {
             loadFixturesCSVFile();
-            scanGitHubImagesFolder();
             setupColorChangeListeners();
         });
-
-        // Query the GitHub API directly to fetch file trees dynamically
-        function scanGitHubImagesFolder() {
-            const dropdown = document.getElementById('manual-opponent-logo-select');
-            const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/Images/Club%20Images?ref=${GITHUB_BRANCH}`;
-
-            fetch(apiUrl)
-                .then(res => {
-                    if(!res.ok) throw new Error("Could not index folder API metadata");
-                    return res.json();
-                })
-                .then(data => {
-                    // Filter down to image extensions only
-                    const imageFiles = data.filter(item => /\.(png|jpg|jpeg|webp|svg)$/i.test(item.name));
-                    
-                    // Remove loading placeholder
-                    dropdown.innerHTML = '<option value="AUTO">⚙️ Auto-Match via CSV Row</option>';
-                    
-                    imageFiles.forEach(file => {
-                        let opt = document.createElement('option');
-                        opt.value = file.name;
-                        opt.textContent = file.name;
-                        dropdown.appendChild(opt);
-                    });
-                })
-                .catch(err => {
-                    console.error("GitHub API Error: ", err);
-                    dropdown.innerHTML = '<option value="AUTO">⚙️ Auto-Match via CSV Row</option><option disabled>❌ Error Scanning GitHub Directory</option>';
-                });
-        }
 
         function loadFixturesCSVFile() {
             const statusBox = document.getElementById('skimming-status');
@@ -365,14 +328,12 @@
             } else {
                 finalTargetFileName = manualDropdownValue;
                 badge.className = "status-badge warning";
-                badge.textContent = "Override Engaged: Forced GitHub Selection";
+                badge.textContent = "Override Engaged: Forced Selection";
             }
 
-            // Target the raw user content CDN for asset loading onto the canvas element
-            const cdnUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/Images/Club%20Images/${finalTargetFileName}`;
-            
-            pathLabel.textContent = `CDN -> /Images/Club Images/${finalTargetFileName}`;
-            opponentLogoImg.src = cdnUrl;
+            // Clean direct relative file asset mapping path structures
+            pathLabel.textContent = `Images/Club Images/${finalTargetFileName}`;
+            opponentLogoImg.src = `Images/Club Images/${finalTargetFileName}`;
         }
 
         function onFixtureRowChange() {
