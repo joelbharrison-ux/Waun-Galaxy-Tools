@@ -26,30 +26,26 @@
 
         .app-container { display: grid; grid-template-columns: 450px 1fr; gap: 20px; flex-grow: 1; align-items: start; }
         
-        /* Left Configuration Panel */
         .config-panel { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; max-height: calc(100vh - 100px); overflow-y: auto; }
         .section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
         .section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .section-title { font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
         
         label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-light); }
-        select, input[type="text"], input[type="color"], textarea { w-index: 100; width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-light); font-size: 14px; margin-bottom: 12px; transition: border 0.2s; }
+        select, input[type="text"], input[type="color"], textarea { width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-light); font-size: 14px; margin-bottom: 12px; transition: border 0.2s; }
         select:focus, input:focus, textarea:focus { border-color: var(--accent-default); outline: none; }
         
         .row-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         
-        /* Status Badges */
         .status-badge { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 10px; }
         .status-badge.success { background: rgba(16, 185, 129, 0.15); color: var(--success); }
         .status-badge.warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
         .status-badge.info { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
 
-        /* Segmented Mode Control Tabs */
         .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
         .tab-btn { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 10px; color: var(--text-muted); font-weight: 600; border-radius: 6px; cursor: pointer; font-size: 13px; text-align: center; }
         .tab-btn.active { background: var(--accent-default); color: var(--text-light); border-color: var(--accent-default); }
 
-        /* Right Preview Canvas Frame */
         .preview-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; position: sticky; top: 20px; min-height: 600px; }
         .canvas-container { background: #000; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); border-radius: 4px; overflow: hidden; position: relative; }
         canvas { display: block; max-width: 100%; height: auto; }
@@ -68,7 +64,6 @@
     </header>
 
     <div class="app-container">
-        <!-- Configuration Panel -->
         <div class="config-panel">
             
             <!-- Global Identity Branding -->
@@ -81,14 +76,14 @@
                     </div>
                     <div>
                         <label>Accent Highlights</label>
-                        <input type="color" id="color-accent" value="#d97706">
+                        <input type="color" id="color-accent" value="#2db92d">
                     </div>
                 </div>
                 <label>Our Club Identity Name</label>
-                <input type="text" id="club-name" value="Town United FC">
+                <input type="text" id="club-name" value="Waunarlwydd Galaxy">
             </div>
 
-            <!-- Global Pipeline Configuration Selector Selector -->
+            <!-- Global Pipeline Configuration Selector -->
             <div class="section">
                 <div class="section-title">Execution Mode</div>
                 <div class="mode-tabs">
@@ -102,7 +97,7 @@
                 <div class="section-title">Data Ingestion Engine</div>
                 <label>Select CSV Live Record Feed Row</label>
                 <select id="csv-row-selector" onchange="onFixtureRowChange()">
-                    <!-- Populated dynamically via script execution execution -->
+                    <!-- Populated dynamically via script execution -->
                 </select>
 
                 <div id="skimming-status" class="status-badge info">Mode: Monitoring Data Columns</div>
@@ -134,7 +129,6 @@
                     <option value="sponsorship">Corporate Sponsorship Announcement</option>
                 </select>
 
-                <!-- Dynamic Subsections inside Manual Settings Layout block -->
                 <div id="fields-signing">
                     <label>Player Name</label>
                     <input type="text" id="player-name" value="Marcus Sterling" oninput="updateCanvasPreview()">
@@ -174,8 +168,7 @@
     </div>
 
     <script>
-        // Mocking the incoming schema matching your exact CSV definitions
-        // Headings: Date, Time, Opponent, Venue, Team Competition, Home score, Away score, Scorers.
+        // Restored key property maps safely to "Opponent" column header definitions
         const mockFixturesCSV = [
             {
                 "Date": "2026-07-18",
@@ -209,18 +202,16 @@
             }
         ];
 
-        // Known items currently available inside the local static asset configuration engine
         const simulatedAvailableLogos = ["riverside_fc.png", "apex_united.png"];
 
-        let systemMode = 'csv'; // 'csv' or 'manual'
+        let systemMode = 'csv'; 
         const canvas = document.getElementById('clubMediaCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Initial setup initialization hook
         window.addEventListener('load', () => {
             populateCSVSelectorOptions();
             setupColorChangeListeners();
-            onFixtureRowChange(); // Trigger first automated canvas engine render execution loop
+            onFixtureRowChange(); 
         });
 
         function populateCSVSelectorOptions() {
@@ -230,6 +221,7 @@
                 let statusInfo = (row["Home score"] !== "") ? `[RESULT: ${row["Home score"]}-${row["Away score"]}]` : "[UPCOMING MATCH]";
                 let option = document.createElement('option');
                 option.value = index;
+                // Correctly referencing row.Opponent here
                 option.textContent = `${row.Date} - ${row.Opponent} ${statusInfo}`;
                 selector.appendChild(option);
             });
@@ -281,8 +273,9 @@
             updateCanvasPreview();
         }
 
-        // Logic check evaluating if the resource text maps cleanly to assets inside local deployment bounds
+        // Corrected path resolution targeting row.Opponent data field
         function checkOpponentAssetResolution(opponentName) {
+            if (!opponentName) return false;
             const expectedFileName = opponentName.toLowerCase().replace(/\s+/g, '_') + '.png';
             const pathLabel = document.getElementById('logo-path-indicator');
             const badge = document.getElementById('logo-match-badge');
@@ -307,10 +300,9 @@
             const selectedIdx = document.getElementById('csv-row-selector').value;
             const rowData = mockFixturesCSV[selectedIdx];
             
-            // Asset Resolution pipeline execution
+            // Runs resolution pipeline using corrected Opponent data column
             checkOpponentAssetResolution(rowData.Opponent);
 
-            // Skimming Evaluation Pipeline to auto-select layout visualization layer state
             const statusBox = document.getElementById('skimming-status');
             if (rowData["Home score"] !== "" && rowData["Away score"] !== "") {
                 statusBox.className = "status-badge success";
@@ -323,9 +315,7 @@
             updateCanvasPreview();
         }
 
-        // Master Rendering Engine Core Interface Controller Loop 
         function updateCanvasPreview() {
-            // Clear current working layer layout
             ctx.fillStyle = "#111827";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -333,7 +323,6 @@
             const accentColor = document.getElementById('color-accent').value;
             const clubName = document.getElementById('club-name').value;
 
-            // Apply high-impact dynamic backdrop vector frames utilizing user identity branding
             ctx.fillStyle = primaryColor;
             ctx.beginPath();
             ctx.moveTo(0, 0);
@@ -349,7 +338,7 @@
             ctx.lineTo(canvas.width * 0.4, canvas.height);
             ctx.lineTo(canvas.width, canvas.height);
             ctx.fill();
-            ctx.globalAlpha = 1.0; // Restoring canvas layer blending operations bounds
+            ctx.globalAlpha = 1.0; 
 
             if (systemMode === 'csv') {
                 const selectedIdx = document.getElementById('csv-row-selector').value;
@@ -371,7 +360,6 @@
         }
 
         function renderUpcomingFixtureLayout(row, clubName, accent) {
-            // Header text configurations
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 44px Arial";
             ctx.textAlign = "center";
@@ -381,21 +369,20 @@
             ctx.font = "900 32px Arial";
             ctx.fillText(row["Team Competition"].toUpperCase(), canvas.width / 2, canvas.height * 0.22);
 
-            // Draw Virtual Team Logo Crest Box Containers
             drawMockCrest(canvas.width * 0.25, canvas.height * 0.4, clubName.substring(0,2).toUpperCase(), accent);
-            drawMockCrest(canvas.width * 0.75, canvas.height * 0.4, row.Opponent.substring(0,2).toUpperCase(), "#ffffff");
+            
+            const oppName = row.Opponent || "Unknown";
+            drawMockCrest(canvas.width * 0.75, canvas.height * 0.4, oppName.substring(0,2).toUpperCase(), "#ffffff");
 
-            // Text Names overlay metrics
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 38px Arial";
             ctx.fillText(clubName, canvas.width * 0.25, canvas.height * 0.55);
-            ctx.fillText(row.Opponent, canvas.width * 0.75, canvas.height * 0.55);
+            ctx.fillText(oppName, canvas.width * 0.75, canvas.height * 0.55);
 
             ctx.fillStyle = accent;
             ctx.font = "bold 64px Arial";
             ctx.fillText("VS", canvas.width / 2, canvas.height * 0.42);
 
-            // Information details footer deck alignment
             let detailsY = canvas.height * 0.72;
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 34px Arial";
@@ -415,19 +402,19 @@
             ctx.fillText(row["Team Competition"].toUpperCase(), canvas.width / 2, canvas.height * 0.22);
 
             drawMockCrest(canvas.width * 0.25, canvas.height * 0.4, clubName.substring(0,2).toUpperCase(), accent);
-            drawMockCrest(canvas.width * 0.75, canvas.height * 0.4, row.Opponent.substring(0,2).toUpperCase(), "#ffffff");
+            
+            const oppName = row.Opponent || "Unknown";
+            drawMockCrest(canvas.width * 0.75, canvas.height * 0.4, oppName.substring(0,2).toUpperCase(), "#ffffff");
 
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 38px Arial";
             ctx.fillText(clubName, canvas.width * 0.25, canvas.height * 0.55);
-            ctx.fillText(row.Opponent, canvas.width * 0.75, canvas.height * 0.55);
+            ctx.fillText(oppName, canvas.width * 0.75, canvas.height * 0.55);
 
-            // Inject Scores matrix pulled out directly via runtime execution loop parsing matching exact indices keys
             ctx.fillStyle = "#ffffff";
             ctx.font = "black 110px Arial";
             ctx.fillText(`${row["Home score"]} - ${row["Away score"]}`, canvas.width / 2, canvas.height * 0.43);
 
-            // Render scorers metrics lists if array row value strings return length content thresholds
             if(row.Scorers) {
                 ctx.fillStyle = "#94a3b8";
                 ctx.font = "italic 28px Arial";
@@ -457,7 +444,6 @@
             ctx.font = "900 72px Arial";
             ctx.fillText("NEW SIGNING ANNOUNCEMENT", canvas.width / 2, canvas.height * 0.28);
 
-            // Vector Placeholder box representing dynamic image load placement mapping frameworks bounds
             ctx.strokeStyle = "#ffffff";
             ctx.lineWidth = 4;
             ctx.strokeRect(canvas.width / 2 - 150, canvas.height * 0.38, 300, 350);
@@ -499,7 +485,6 @@
             ctx.font = "italic 32px Arial";
             ctx.fillText("We are thrilled to welcome our new corporate ally to the club family:", canvas.width / 2, canvas.height * 0.45);
 
-            // Sponsor branding visual card layout frame
             ctx.fillStyle = "#0f172a";
             ctx.fillRect(canvas.width * 0.1, canvas.height * 0.52, canvas.width * 0.8, 220);
             ctx.strokeStyle = accent;
