@@ -117,21 +117,23 @@
                     <div id="logo-match-badge" class="status-badge warning">System Idle</div>
                     
                     <div style="margin-top: 10px;">
-                        <label>Manual Opponent Photo Select (Override)</label>
+                        <label style="color: #f59e0b;">⚠️ Force Local Crest Override</label>
                         <select id="manual-opponent-logo-select" onchange="onManualOpponentLogoChange()">
-                            <option value="AUTO">⚙️ Always Use Auto-Matched Name</option>
+                            <option value="AUTO">⚙️ Auto-Match via CSV Row</option>
                             <option value="pontarddulais_town.png">pontarddulais_town.png</option>
-                            <option value="riverside_fc.png">riverside_fc.png</option>
-                            <option value="apex_united.png">apex_united.png</option>
-                            <option value="starr_rangers_sc.png">starr_rangers_sc.png</option>
-                            <option value="generic_crest.png">generic_crest.png</option>
+                            <option value="penlan_club.png">penlan_club.png</option>
+                            <option value="mumbles_rangers.png">mumbles_rangers.png</option>
+                            <option value="morriston_town.png">morriston_town.png</option>
+                            <option value="garden_village.png">garden_village.png</option>
+                            <option value="gorseinon_athletic.png">gorseinon_athletic.png</option>
+                            <option value="ynysygerwn.png">ynysygerwn.png</option>
                         </select>
                     </div>
                 </div>
             </div>
 
             <!-- Manual Media Inputs Layout Block -->
-            <div id="panel-manual" class="section hidden">
+            <div id="panel-manual" class="section" style="display:none;">
                 <div class="section-title">Manual Announcement Selection</div>
                 <label>Template Layout Focus Type</label>
                 <select id="manual-template-type" onchange="onManualTypeChange()">
@@ -148,7 +150,7 @@
                     <input type="text" id="player-number" value="10" oninput="updateCanvasPreview()">
                 </div>
 
-                <div id="fields-sponsorship" class="hidden">
+                <div id="fields-sponsorship" style="display:none;">
                     <label>Corporate Sponsor Corporate Identity</label>
                     <input type="text" id="sponsor-name" value="Apex Industries Global" oninput="updateCanvasPreview()">
                     <label>Sponsorship Tier Designation Level</label>
@@ -183,14 +185,11 @@
         const canvas = document.getElementById('clubMediaCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Image pre-caching setup
         let clubLogoImg = new Image();
         let opponentLogoImg = new Image();
         
-        // Point WaunG logo directly to the root folder
         clubLogoImg.src = 'WaunG.png';
         
-        // Ensure canvas draws when images finish downloading
         clubLogoImg.onload = () => updateCanvasPreview();
         opponentLogoImg.onload = () => updateCanvasPreview();
         opponentLogoImg.onerror = () => {
@@ -221,25 +220,22 @@
                     statusBox.className = "status-badge danger";
                     statusBox.textContent = "Error: fixtures.csv not detected.";
                     
-                    mockFixturesCSV = [{ "Date": "No CSV Found", "Time": "00:00", "Opponent": "Missing File", "Venue": "Home", "Team Competition": "Setup Required", "Home score": "", "Away score": "", "Scorers": "" }];
+                    mockFixturesCSV = [{ "Date": "No CSV Found", "Time": "00:00", "Opponent": "Pontarddulais Town", "Venue": "Home", "Team Competition": "Setup Required", "Home score": "", "Away score": "", "Scorers": "" }];
                     populateCSVSelectorOptions();
-                    updateCanvasPreview();
+                    onFixtureRowChange();
                 });
         }
 
-        // Fixed Parser: Uses a safe regex split that doesn't split on spaces inside words
         function parseCSVDataMatrix(csvText) {
             const lines = csvText.split(/\r?\n/);
             if (lines.length === 0) return;
             
-            // Clean out quotes or odd characters from the header row
             const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
             mockFixturesCSV = [];
 
             for (let i = 1; i < lines.length; i++) {
                 if (!lines[i].trim()) continue;
                 
-                // Matches items separated by commas while preserving internal strings and spaces correctly
                 let matches = [];
                 let row = lines[i];
                 let insideQuote = false;
@@ -261,7 +257,7 @@
                 const rowData = {};
                 headers.forEach((header, index) => {
                     let val = matches[index] !== undefined ? matches[index] : "";
-                    rowData[header] = val.replace(/^["']|["']$/g, ''); // strip floating quotes
+                    rowData[header] = val.replace(/^["']|["']$/g, '');
                 });
                 mockFixturesCSV.push(rowData);
             }
@@ -317,8 +313,6 @@
         }
 
         function resolveOpponentImagePipeline(opponentName) {
-            if (!opponentName) return;
-            
             const manualDropdownValue = document.getElementById('manual-opponent-logo-select').value;
             const pathLabel = document.getElementById('logo-path-indicator');
             const badge = document.getElementById('logo-match-badge');
@@ -326,20 +320,17 @@
             let finalTargetFileName = "";
 
             if (manualDropdownValue === "AUTO") {
-                // Generates standardized file naming syntax (e.g. "pontarddulais_town.png")
+                if (!opponentName) return;
                 finalTargetFileName = opponentName.toLowerCase().replace(/\s+/g, '_') + '.png';
                 badge.className = "status-badge success";
-                badge.textContent = "Auto Mode: Mapping from CSV value";
+                badge.textContent = "Auto Mode: Linked to CSV Value";
             } else {
-                // Dynamic dropdown selection override
                 finalTargetFileName = manualDropdownValue;
-                badge.className = "status-badge info";
-                badge.textContent = "Manual Graphic Dropdown Override Engaged";
+                badge.className = "status-badge warning";
+                badge.textContent = "Override Engaged: Forced Custom Selection";
             }
 
             pathLabel.textContent = `Images/Club Images/${finalTargetFileName}`;
-            
-            // Apply source shift to reload image content pipeline natively
             opponentLogoImg.src = `Images/Club Images/${finalTargetFileName}`;
         }
 
@@ -363,12 +354,14 @@
         }
 
         function onManualOpponentLogoChange() {
-            if (mockFixturesCSV.length === 0) return;
-            const selectedIdx = document.getElementById('csv-row-selector').value;
-            const rowData = mockFixturesCSV[selectedIdx];
-            if (rowData) {
-                resolveOpponentImagePipeline(rowData.Opponent);
+            let oppName = "Unknown";
+            if (mockFixturesCSV.length > 0) {
+                const selectedIdx = document.getElementById('csv-row-selector').value;
+                if (mockFixturesCSV[selectedIdx]) {
+                    oppName = mockFixturesCSV[selectedIdx].Opponent;
+                }
             }
+            resolveOpponentImagePipeline(oppName);
         }
 
         function updateCanvasPreview() {
@@ -566,7 +559,6 @@
                 const size = 180;
                 ctx.drawImage(imgObject, -size / 2, -size / 2, size, size);
             } else {
-                // Crest vector fallback if path returns empty or broken assets
                 ctx.fillStyle = fallbackColor;
                 ctx.beginPath();
                 ctx.moveTo(0, -80);
