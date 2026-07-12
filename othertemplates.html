@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club Media & Matchday Generator</title>
+    <style>
+        :root {
+            --bg-primary: #121824;
+            --bg-secondary: #1e293b;
+            --accent-default: #d97706;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-primary); color: var(--text-light); padding: 20px; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        header { margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; }
+        header h1 { font-size: 24px; color: var(--text-light); }
+        header p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+
+        .app-container { display: grid; grid-template-columns: 450px 1fr; gap: 20px; flex-grow: 1; align-items: start; }
+        
+        /* Left Configuration Panel */
+        .config-panel { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; max-height: calc(100vh - 100px); overflow-y: auto; }
+        .section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+        .section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .section-title { font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+        
+        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-light); }
+        select, input[type="text"], input[type="color"], textarea { w-index: 100; width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-light); font-size: 14px; margin-bottom: 12px; transition: border 0.2s; }
+        select:focus, input:focus, textarea:focus { border-color: var(--accent-default); outline: none; }
+        
+        .row-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        /* Status Badges */
+        .status-badge { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 10px; }
+        .status-badge.success { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .status-badge.warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .status-badge.info { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+        /* Segmented Mode Control Tabs */
+        .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .tab-btn { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 10px; color: var(--text-muted); font-weight: 600; border-radius: 6px; cursor: pointer; font-size: 13px; text-align: center; }
+        .tab-btn.active { background: var(--accent-default); color: var(--text-light); border-color: var(--accent-default); }
+
+        /* Right Preview Canvas Frame */
+        .preview-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; position: sticky; top: 20px; min-height: 600px; }
+        .canvas-container { background: #000; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); border-radius: 4px; overflow: hidden; position: relative; }
+        canvas { display: block; max-width: 100%; height: auto; }
+        
+        .action-btn { width: 100%; background: var(--accent-default); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px; margin-top: 15px; transition: opacity 0.2s; }
+        .action-btn:hover { opacity: 0.9; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Club Media &amp; Announcement Canvas Engine</h1>
+        <p>Dynamic media generation engine reading data matrices mapping directly to localized assets inside <code>Images\Club Images\</code></p>
+    </header>
+
+    <div class="app-container">
+        <!-- Configuration Panel -->
+        <div class="config-panel">
+            
+            <!-- Global Identity Branding -->
+            <div class="section">
+                <div class="section-title">Club Identity</div>
+                <div class="row-group">
+                    <div>
+                        <label>Primary Brand Color</label>
+                        <input type="color" id="color-primary" value="#1e3a8a">
+                    </div>
+                    <div>
+                        <label>Accent Highlights</label>
+                        <input type="color" id="color-accent" value="#d97706">
+                    </div>
+                </div>
+                <label>Our Club Identity Name</label>
+                <input type="text" id="club-name" value="Town United FC">
+            </div>
+
+            <!-- Global Pipeline Configuration Selector Selector -->
+            <div class="section">
+                <div class="section-title">Execution Mode</div>
+                <div class="mode-tabs">
+                    <div class="tab-btn active" onclick="setMode('csv')">Auto-Skim CSV Feed</div>
+                    <div class="tab-btn" onclick="setMode('manual')">Manual Marketing</div>
+                </div>
+            </div>
+
+            <!-- CSV Active Dynamic Interface Panel -->
+            <div id="panel-csv" class="section">
+                <div class="section-title">Data Ingestion Engine</div>
+                <label>Select CSV Live Record Feed Row</label>
+                <select id="csv-row-selector" onchange="onFixtureRowChange()">
+                    <!-- Populated dynamically via script execution execution -->
+                </select>
+
+                <div id="skimming-status" class="status-badge info">Mode: Monitoring Data Columns</div>
+                
+                <div id="logo-status-box" style="margin-top: 8px;">
+                    <label>Opponent Directory Resolution Target Path</label>
+                    <div id="logo-path-indicator" style="font-family: monospace; font-size: 11px; margin-bottom: 6px; background:#121824; padding:6px; border-radius:4px; border:1px solid var(--border-color);">
+                        Images\Club Images\
+                    </div>
+                    <div id="logo-match-badge" class="status-badge success">Directory File Check</div>
+                    
+                    <div id="fallback-logo-container" class="hidden">
+                        <label style="color:var(--warning);">Manual Fallback Selection</label>
+                        <select id="fallback-logo-select" onchange="updateCanvasPreview()">
+                            <option value="generic_crest.png">Use Default Generic Crest Placeholder</option>
+                            <option value="alternative_shield.png">Alternative Shield Shape Template</option>
+                            <option value="custom_stripe.png">Striped Monogram Badge Overlay</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Media Inputs Layout Block -->
+            <div id="panel-manual" class="section hidden">
+                <div class="section-title">Manual Announcement Selection</div>
+                <label>Template Layout Focus Type</label>
+                <select id="manual-template-type" onchange="onManualTypeChange()">
+                    <option value="signing">Player Signing Announcement</option>
+                    <option value="sponsorship">Corporate Sponsorship Announcement</option>
+                </select>
+
+                <!-- Dynamic Subsections inside Manual Settings Layout block -->
+                <div id="fields-signing">
+                    <label>Player Name</label>
+                    <input type="text" id="player-name" value="Marcus Sterling" oninput="updateCanvasPreview()">
+                    <label>Position / Role</label>
+                    <input type="text" id="player-position" value="Central Attacking Midfielder" oninput="updateCanvasPreview()">
+                    <label>Squad Number assignment</label>
+                    <input type="text" id="player-number" value="10" oninput="updateCanvasPreview()">
+                </div>
+
+                <div id="fields-sponsorship" class="hidden">
+                    <label>Corporate Sponsor Corporate Identity</label>
+                    <input type="text" id="sponsor-name" value="Apex Industries Global" oninput="updateCanvasPreview()">
+                    <label>Sponsorship Tier Designation Level</label>
+                    <input type="text" id="sponsor-tier" value="Official Lead Principal Partner" oninput="updateCanvasPreview()">
+                </div>
+            </div>
+
+            <!-- Output aspect configuration controls wrapper box -->
+            <div class="section">
+                <div class="section-title">Canvas Output Properties</div>
+                <label>Layout Export Framing Aspect Ratio</label>
+                <select id="canvas-aspect" onchange="resizeMediaCanvas()">
+                    <option value="1:1">Square Grid Layout (1:1 - Instagram Feed)</option>
+                    <option value="9:16">Vertical Immersive Frame (9:16 - Stories/Mobile)</option>
+                </select>
+                <button class="action-btn" onclick="downloadGeneratedGraphic()">Download Media Package (.PNG)</button>
+            </div>
+
+        </div>
+
+        <!-- Preview Interactive Render Frame Area -->
+        <div class="preview-panel">
+            <div class="canvas-container" id="canvas-frame">
+                <canvas id="clubMediaCanvas" width="1080" height="1080"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mocking the incoming schema matching your exact CSV definitions
+        // Headings: Date, Time, Opponent, Venue, Team Competition, Home score, Away score, Scorers.
+        const mockFixturesCSV = [
+            {
+                "Date": "2026-07-18",
+                "Time": "15:00",
+                "Opponent": "Riverside FC",
+                "Venue": "Home",
+                "Team Competition": "Premier League Division 1",
+                "Home score": "", 
+                "Away score": "",
+                "Scorers": ""
+            },
+            {
+                "Date": "2026-07-05",
+                "Time": "19:45",
+                "Opponent": "Apex United",
+                "Venue": "Away",
+                "Team Competition": "Regional Challenge Cup",
+                "Home score": "1", 
+                "Away score": "4",
+                "Scorers": "Sterling 14', Miller 55', Vance 89'"
+            },
+            {
+                "Date": "2026-07-26",
+                "Time": "14:00",
+                "Opponent": "Starr Rangers SC",
+                "Venue": "Home",
+                "Team Competition": "Premier League Division 1",
+                "Home score": "", 
+                "Away score": "",
+                "Scorers": ""
+            }
+        ];
+
+        // Known items currently available inside the local static asset configuration engine
+        const simulatedAvailableLogos = ["riverside_fc.png", "apex_united.png"];
+
+        let systemMode = 'csv'; // 'csv' or 'manual'
+        const canvas = document.getElementById('clubMediaCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Initial setup initialization hook
+        window.addEventListener('load', () => {
+            populateCSVSelectorOptions();
+            setupColorChangeListeners();
+            onFixtureRowChange(); // Trigger first automated canvas engine render execution loop
+        });
+
+        function populateCSVSelectorOptions() {
+            const selector = document.getElementById('csv-row-selector');
+            selector.innerHTML = '';
+            mockFixturesCSV.forEach((row, index) => {
+                let statusInfo = (row["Home score"] !== "") ? `[RESULT: ${row["Home score"]}-${row["Away score"]}]` : "[UPCOMING MATCH]";
+                let option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${row.Date} - ${row.Opponent} ${statusInfo}`;
+                selector.appendChild(option);
+            });
+        }
+
+        function setupColorChangeListeners() {
+            document.getElementById('color-primary').addEventListener('input', updateCanvasPreview);
+            document.getElementById('color-accent').addEventListener('input', updateCanvasPreview);
+            document.getElementById('club-name').addEventListener('input', updateCanvasPreview);
+        }
+
+        function setMode(mode) {
+            systemMode = mode;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            if(mode === 'csv') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('panel-csv').classList.remove('hidden');
+                document.getElementById('panel-manual').classList.add('hidden');
+                onFixtureRowChange();
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('panel-csv').classList.add('hidden');
+                document.getElementById('panel-manual').classList.remove('hidden');
+                onManualTypeChange();
+            }
+        }
+
+        function onManualTypeChange() {
+            const type = document.getElementById('manual-template-type').value;
+            if(type === 'signing') {
+                document.getElementById('fields-signing').classList.remove('hidden');
+                document.getElementById('fields-sponsorship').classList.add('hidden');
+            } else {
+                document.getElementById('fields-signing').classList.add('hidden');
+                document.getElementById('fields-sponsorship').classList.remove('hidden');
+            }
+            updateCanvasPreview();
+        }
+
+        function resizeMediaCanvas() {
+            const ratio = document.getElementById('canvas-aspect').value;
+            if(ratio === '1:1') {
+                canvas.width = 1080;
+                canvas.height = 1080;
+            } else {
+                canvas.width = 1080;
+                canvas.height = 1920;
+            }
+            updateCanvasPreview();
+        }
+
+        // Logic check evaluating if the resource text maps cleanly to assets inside local deployment bounds
+        function checkOpponentAssetResolution(opponentName) {
+            const expectedFileName = opponentName.toLowerCase().replace(/\s+/g, '_') + '.png';
+            const pathLabel = document.getElementById('logo-path-indicator');
+            const badge = document.getElementById('logo-match-badge');
+            const fallbackSelector = document.getElementById('fallback-logo-container');
+            
+            pathLabel.textContent = `Images\\Club Images\\${expectedFileName}`;
+
+            if(simulatedAvailableLogos.includes(expectedFileName)) {
+                badge.className = "status-badge success";
+                badge.textContent = "Asset Located Successfully (Auto-Mapped)";
+                fallbackSelector.classList.add('hidden');
+                return true;
+            } else {
+                badge.className = "status-badge warning";
+                badge.textContent = "Resource Path Empty - Select Fallback Asset";
+                fallbackSelector.classList.remove('hidden');
+                return false;
+            }
+        }
+
+        function onFixtureRowChange() {
+            const selectedIdx = document.getElementById('csv-row-selector').value;
+            const rowData = mockFixturesCSV[selectedIdx];
+            
+            // Asset Resolution pipeline execution
+            checkOpponentAssetResolution(rowData.Opponent);
+
+            // Skimming Evaluation Pipeline to auto-select layout visualization layer state
+            const statusBox = document.getElementById('skimming-status');
+            if (rowData["Home score"] !== "" && rowData["Away score"] !== "") {
+                statusBox.className = "status-badge success";
+                statusBox.textContent = "Data Detected: Rendering Match Result Media Screen Layout";
+            } else {
+                statusBox.className = "status-badge info";
+                statusBox.textContent = "Data Evaluated: Upcoming Fixture Window Mode Engaged";
+            }
+
+            updateCanvasPreview();
+        }
+
+        // Master Rendering Engine Core Interface Controller Loop 
+        function updateCanvasPreview() {
+            // Clear current working layer layout
+            ctx.fillStyle = "#111827";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const primaryColor = document.getElementById('color-primary').value;
+            const accentColor = document.getElementById('color-accent').value;
+            const clubName = document.getElementById('club-name').value;
+
+            // Apply high-impact dynamic backdrop vector frames utilizing user identity branding
+            ctx.fillStyle = primaryColor;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(canvas.width * 0.75, 0);
+            ctx.lineTo(canvas.width * 0.25, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            ctx.fill();
+
+            ctx.fillStyle = accentColor;
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width, canvas.height * 0.4);
+            ctx.lineTo(canvas.width * 0.4, canvas.height);
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.fill();
+            ctx.globalAlpha = 1.0; // Restoring canvas layer blending operations bounds
+
+            if (systemMode === 'csv') {
+                const selectedIdx = document.getElementById('csv-row-selector').value;
+                const rowData = mockFixturesCSV[selectedIdx];
+                
+                if (rowData["Home score"] !== "" && rowData["Away score"] !== "") {
+                    renderMatchResultLayout(rowData, clubName, accentColor);
+                } else {
+                    renderUpcomingFixtureLayout(rowData, clubName, accentColor);
+                }
+            } else {
+                const manualType = document.getElementById('manual-template-type').value;
+                if(manualType === 'signing') {
+                    renderPlayerSigningLayout(clubName, accentColor);
+                } else {
+                    renderSponsorshipLayout(clubName, accentColor);
+                }
+            }
+        }
+
+        function renderUpcomingFixtureLayout(row, clubName, accent) {
+            // Header text configurations
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 44px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("UPCOMING FIXTURE", canvas.width / 2, canvas.height * 0.15);
+
+            ctx.fillStyle = accent;
+            ctx.font = "900 32px Arial";
+            ctx.fillText(row["Team Competition"].toUpperCase(), canvas.width / 2, canvas.height * 0.22);
+
+            // Draw Virtual Team Logo Crest Box Containers
+            drawMockCrest(canvas.width * 0.25, canvas.height * 0.4, clubName.substring(0,2).toUpperCase(), accent);
+            drawMockCrest(canvas.width * 0.75, canvas.height * 0.4, row.Opponent.substring(0,2).toUpperCase(), "#ffffff");
+
+            // Text Names overlay metrics
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 38px Arial";
+            ctx.fillText(clubName, canvas.width * 0.25, canvas.height * 0.55);
+            ctx.fillText(row.Opponent, canvas.width * 0.75, canvas.height * 0.55);
+
+            ctx.fillStyle = accent;
+            ctx.font = "bold 64px Arial";
+            ctx.fillText("VS", canvas.width / 2, canvas.height * 0.42);
+
+            // Information details footer deck alignment
+            let detailsY = canvas.height * 0.72;
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 34px Arial";
+            ctx.fillText(`VENUE: ${row.Venue.toUpperCase()} GROUND`, canvas.width / 2, detailsY);
+            ctx.fillText(`DATE: ${row.Date}`, canvas.width / 2, detailsY + 60);
+            ctx.fillText(`KICK-OFF TIME: ${row.Time}`, canvas.width / 2, detailsY + 120);
+        }
+
+        function renderMatchResultLayout(row, clubName, accent) {
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 44px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("MATCH FINAL RESULT", canvas.width / 2, canvas.height * 0.15);
+
+            ctx.fillStyle = accent;
+            ctx.font = "900 32px Arial";
+            ctx.fillText(row["Team Competition"].toUpperCase(), canvas.width / 2, canvas.height * 0.22);
+
+            drawMockCrest(canvas.width * 0.25, canvas.height * 0.4, clubName.substring(0,2).toUpperCase(), accent);
+            drawMockCrest(canvas.width * 0.75, canvas.height * 0.4, row.Opponent.substring(0,2).toUpperCase(), "#ffffff");
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 38px Arial";
+            ctx.fillText(clubName, canvas.width * 0.25, canvas.height * 0.55);
+            ctx.fillText(row.Opponent, canvas.width * 0.75, canvas.height * 0.55);
+
+            // Inject Scores matrix pulled out directly via runtime execution loop parsing matching exact indices keys
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "black 110px Arial";
+            ctx.fillText(`${row["Home score"]} - ${row["Away score"]}`, canvas.width / 2, canvas.height * 0.43);
+
+            // Render scorers metrics lists if array row value strings return length content thresholds
+            if(row.Scorers) {
+                ctx.fillStyle = "#94a3b8";
+                ctx.font = "italic 28px Arial";
+                ctx.fillText("Scorers Matrix Board:", canvas.width / 2, canvas.height * 0.68);
+                
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 30px Arial";
+                ctx.fillText(row.Scorers, canvas.width / 2, canvas.height * 0.73);
+            }
+
+            ctx.fillStyle = accent;
+            ctx.font = "bold 28px Arial";
+            ctx.fillText(`Match Records Saved at: ${row.Venue} Arena`, canvas.width / 2, canvas.height * 0.88);
+        }
+
+        function renderPlayerSigningLayout(clubName, accent) {
+            const pName = document.getElementById('player-name').value;
+            const pPos = document.getElementById('player-position').value;
+            const pNum = document.getElementById('player-number').value;
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 42px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(clubName.toUpperCase(), canvas.width / 2, canvas.height * 0.15);
+
+            ctx.fillStyle = accent;
+            ctx.font = "900 72px Arial";
+            ctx.fillText("NEW SIGNING ANNOUNCEMENT", canvas.width / 2, canvas.height * 0.28);
+
+            // Vector Placeholder box representing dynamic image load placement mapping frameworks bounds
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(canvas.width / 2 - 150, canvas.height * 0.38, 300, 350);
+            
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(canvas.width / 2 - 150, canvas.height * 0.38, 300, 350);
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 24px Arial";
+            ctx.fillText("[ Player Silhouette Asset Layer ]", canvas.width / 2, canvas.height * 0.55);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "900 64px Arial";
+            ctx.fillText(pName.toUpperCase(), canvas.width / 2, canvas.height * 0.78);
+
+            ctx.fillStyle = accent;
+            ctx.font = "bold 36px Arial";
+            ctx.fillText(pPos, canvas.width / 2, canvas.height * 0.84);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 80px Arial";
+            ctx.fillText(`SQUAD NO. ${pNum}`, canvas.width / 2, canvas.height * 0.93);
+        }
+
+        function renderSponsorshipLayout(clubName, accent) {
+            const sName = document.getElementById('sponsor-name').value;
+            const sTier = document.getElementById('sponsor-tier').value;
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 44px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(clubName.toUpperCase(), canvas.width / 2, canvas.height * 0.18);
+
+            ctx.fillStyle = accent;
+            ctx.font = "900 68px Arial";
+            ctx.fillText("PROUD PARTNERSHIP ANNOUNCEMENT", canvas.width / 2, canvas.height * 0.32);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "italic 32px Arial";
+            ctx.fillText("We are thrilled to welcome our new corporate ally to the club family:", canvas.width / 2, canvas.height * 0.45);
+
+            // Sponsor branding visual card layout frame
+            ctx.fillStyle = "#0f172a";
+            ctx.fillRect(canvas.width * 0.1, canvas.height * 0.52, canvas.width * 0.8, 220);
+            ctx.strokeStyle = accent;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(canvas.width * 0.1, canvas.height * 0.52, canvas.width * 0.8, 220);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "900 58px Arial";
+            ctx.fillText(sName, canvas.width / 2, canvas.height * 0.65);
+
+            ctx.fillStyle = accent;
+            ctx.font = "bold 36px Arial";
+            ctx.fillText(sTier.toUpperCase(), canvas.width / 2, canvas.height * 0.82);
+        }
+
+        function drawMockCrest(x, y, initials, color) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(0, -80);
+            ctx.lineTo(70, -40);
+            ctx.lineTo(70, 40);
+            ctx.lineTo(0, 90);
+            ctx.lineTo(-70, 40);
+            ctx.lineTo(-70, -40);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            ctx.fillStyle = (color === "#ffffff") ? "#111827" : "#ffffff";
+            ctx.font = "bold 36px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(initials, 0, 0);
+            
+            ctx.restore();
+        }
+
+        function downloadGeneratedGraphic() {
+            const imageURI = canvas.toDataURL("image/png");
+            const virtualAnchor = document.createElement('a');
+            virtualAnchor.download = `club_announcement_${Date.now()}.png`;
+            virtualAnchor.href = imageURI;
+            document.body.appendChild(virtualAnchor);
+            virtualAnchor.click();
+            document.body.removeChild(virtualAnchor);
+        }
+    </script>
+</body>
+</html>
