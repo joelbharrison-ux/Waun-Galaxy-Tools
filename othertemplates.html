@@ -95,7 +95,7 @@
 <body>
 
     <h1>🌌 Waun Galaxy Media Engine</h1>
-    <div class="badge">Production Environment Pipeline</div>
+    <div class="badge">Live Repository Data Pipeline</div>
 
     <div class="container">
         <!-- Control Panel -->
@@ -105,13 +105,13 @@
             <div class="form-group">
                 <label for="fixture-selector">Select Active Fixture Row</label>
                 <select id="fixture-selector" onchange="onFixtureRowChange()">
-                    <option value="">-- Loading dynamic schedule CSV data --</option>
+                    <option value="">-- Fetching schedules from fixtures.csv --</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label for="manual-opponent-logo-select">Asset Registry Look-up (Images/Club Images)</label>
-                <select id="manual-opponent-logo-select" onchange="updateCanvasPreview()">
+                <select id="manual-opponent-logo-select" onchange="onManualImageChange()">
                     <option value="AUTO">⚙️ Auto-Match via CSV Row</option>
                 </select>
             </div>
@@ -121,22 +121,22 @@
             <div class="row-grid">
                 <div class="form-group">
                     <label for="comp-input">Competition</label>
-                    <input type="text" id="comp-input" oninput="updateCanvasPreview()" value="League Match">
+                    <input type="text" id="comp-input" oninput="updateCanvasPreview()" value="">
                 </div>
                 <div class="form-group">
                     <label for="date-input">Date & Time</label>
-                    <input type="text" id="date-input" oninput="updateCanvasPreview()" value="Saturday 2:30 PM">
+                    <input type="text" id="date-input" oninput="updateCanvasPreview()" value="">
                 </div>
             </div>
 
             <div class="row-grid">
                 <div class="form-group">
                     <label for="team-input">Opponent Team</label>
-                    <input type="text" id="team-input" oninput="updateCanvasPreview()" value="Opponent FC">
+                    <input type="text" id="team-input" oninput="onManualTeamTextInput()" value="">
                 </div>
                 <div class="form-group">
                     <label for="venue-input">Venue Location</label>
-                    <input type="text" id="venue-input" oninput="updateCanvasPreview()" value="Away Ground">
+                    <input type="text" id="venue-input" oninput="updateCanvasPreview()" value="">
                 </div>
             </div>
 
@@ -163,21 +163,23 @@
     </div>
 
     <script>
-        let mockFixturesCSV = [];
-        let systemMode = 'csv'; 
+        let fixturesData = [];
         const canvas = document.getElementById('clubMediaCanvas');
         const ctx = canvas.getContext('2d');
 
+        // Setup image vectors with crossOrigin flags enabled
         let clubLogoImg = new Image();
         let opponentLogoImg = new Image();
         
-        // Root base home assets setup
+        clubLogoImg.crossOrigin = "anonymous";
+        opponentLogoImg.crossOrigin = "anonymous";
+        
         clubLogoImg.src = 'WaunG.png';
         
         clubLogoImg.onload = () => updateCanvasPreview();
         opponentLogoImg.onload = () => updateCanvasPreview();
         opponentLogoImg.onerror = () => {
-            console.warn("Opponent image could not be resolved from relative repository path.");
+            console.warn("Target opponent graphics file signature unresolvable or missing.");
             updateCanvasPreview();
         };
 
@@ -187,25 +189,22 @@
             setupColorChangeListeners();
         });
 
-        // Precision URL Sniffer for github.com/joelbharrison-ux/Waun-Galaxy-Tools
+        // Precision URL Environment Parsing Engine
         function getRepoMetadata() {
             const hostname = window.location.hostname;
             const pathname = window.location.pathname;
             
-            // Standard target parameters matched exactly to your live repository profile
             let owner = "joelbharrison-ux"; 
             let repo = "Waun-Galaxy-Tools";
 
             const pathParts = pathname.split('/').filter(p => p.trim().length > 0);
 
-            // Case 1: Running live via GitHub Pages (e.g., joelbharrison-ux.github.io/Waun-Galaxy-Tools/)
             if (hostname.includes("github.io")) {
                 owner = hostname.split('.')[0];
                 if (pathParts.length > 0) {
                     repo = pathParts[0];
                 }
             } 
-            // Case 2: Opened directly inside the github.com file interface layers
             else if (hostname.includes("github.com")) {
                 if (pathParts.length >= 2) {
                     owner = pathParts[0];
@@ -220,7 +219,6 @@
             const dropdown = document.getElementById('manual-opponent-logo-select');
             const meta = getRepoMetadata();
             
-            // Diagnostics printing directly out to F12 Console Window
             console.log("%c⚓ DATA INGESTION ENGINE ACTIVE", "color: #d97706; font-weight: bold;");
             console.table(meta);
             
@@ -228,7 +226,7 @@
 
             fetch(apiUrl)
                 .then(res => {
-                    if(!res.ok) throw new Error(`GitHub API Rejected Request (Status: ${res.status}). Verify character casing parameters.`);
+                    if(!res.ok) throw new Error(`GitHub API Rejected Request (Status: ${res.status}).`);
                     return res.json();
                 })
                 .then(data => {
@@ -243,42 +241,46 @@
                         dropdown.appendChild(opt);
                     });
                     
-                    onFixtureRowChange();
+                    resolveOpponentImagePipeline();
                 })
                 .catch(err => {
-                    console.error("Dynamic Image Scrape Failed: ", err.message);
+                    console.error("Dynamic Registry Scanning Failure: ", err.message);
                     dropdown.innerHTML = `
                         <option value="AUTO">⚙️ Auto-Match via CSV Row</option>
-                        <option value="" disabled>❌ Auto-detect failed (${meta.owner}/${meta.repo})</option>
+                        <option value="" disabled>❌ Asset read error (${meta.owner}/${meta.repo})</option>
                     `;
                 });
         }
 
         function loadFixturesCSVFile() {
-            // Attempt extraction of native fixtures file relative repository root pathing structures
+            const selector = document.getElementById('fixture-selector');
+            
             fetch('fixtures.csv')
                 .then(res => {
-                    if(!res.ok) throw new Error("Local CSV file not found, applying procedural generation structural fallbacks.");
+                    if(!res.ok) throw new Error("Target file 'fixtures.csv' not found at repository root.");
                     return res.text();
                 })
                 .then(text => {
                     parseFixturesCSV(text);
                 })
                 .catch(err => {
-                    console.log(err.message);
-                    generateMockFallbackCSV();
+                    console.error(err.message);
+                    selector.innerHTML = `<option value="">❌ Error: 'fixtures.csv' missing at repository root.</option>`;
+                    updateCanvasPreview();
                 });
         }
 
         function parseFixturesCSV(text) {
             const lines = text.split('\n');
-            mockFixturesCSV = [];
+            fixturesData = [];
             
             const dropdown = document.getElementById('fixture-selector');
-            dropdown.innerHTML = '';
+            dropdown.innerHTML = '<option value="">-- Choose a Match From fixtures.csv --</option>';
 
             for(let i = 1; i < lines.length; i++) {
                 if(!lines[i].trim()) continue;
+                
+                // Splitting columns correctly ensuring simple comma parsed boundaries
                 const columns = lines[i].split(',');
                 if(columns.length >= 4) {
                     const matchObj = {
@@ -287,56 +289,76 @@
                         venue: columns[2].trim(),
                         competition: columns[3].trim()
                     };
-                    mockFixturesCSV.push(matchObj);
+                    fixturesData.push(matchObj);
                     
                     let opt = document.createElement('option');
-                    opt.value = mockFixturesCSV.length - 1;
-                    opt.textContent = `${matchObj.competition}: vs ${matchObj.opponent} (${matchObj.date})`;
+                    opt.value = fixturesData.length - 1;
+                    opt.textContent = `${matchObj.competition}: vs ${matchObj.opponent}`;
                     dropdown.appendChild(opt);
                 }
             }
-            onFixtureRowChange();
         }
 
-        function generateMockFallbackCSV() {
-            mockFixturesCSV = [
-                { opponent: "Swansea City Academy", date: "Saturday Oct 14 - 14:30", venue: "Gorseinon Ground (Away)", competition: "West Wales Premier League" },
-                { opponent: "Mumbles Rangers", date: "Friday Oct 20 - 19:30", venue: "Underhill Park (Home)", competition: "FAW Welsh Cup" },
-                { opponent: "Pontarddulais Town", date: "Saturday Nov 04 - 14:00", venue: "Coed Bach Park (Away)", competition: "West Wales Premier League" }
-            ];
-            
-            const dropdown = document.getElementById('fixture-selector');
-            dropdown.innerHTML = '';
-            
-            mockFixturesCSV.forEach((match, index) => {
-                let opt = document.createElement('option');
-                opt.value = index;
-                opt.textContent = `[Fallback] ${match.competition} vs ${match.opponent}`;
-                dropdown.appendChild(opt);
-            });
-            onFixtureRowChange();
+        function findBestImageMatch(teamName) {
+            const dropdown = document.getElementById('manual-opponent-logo-select');
+            if (!teamName || dropdown.options.length <= 1) return null;
+
+            const cleanTeamName = teamName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+            for (let i = 1; i < dropdown.options.length; i++) {
+                const fileName = dropdown.options[i].value;
+                const cleanFileName = fileName.toLowerCase().replace(/\.[^/.]+$/, "").replace(/[^a-z0-9]/g, '');
+                
+                if (cleanFileName.includes(cleanTeamName) || cleanTeamName.includes(cleanFileName)) {
+                    return fileName;
+                }
+            }
+            return null;
         }
 
         function onFixtureRowChange() {
             const index = document.getElementById('fixture-selector').value;
-            if (index === "" || !mockFixturesCSV[index]) return;
+            if (index === "") return;
 
-            const selectedMatch = mockFixturesCSV[index];
+            const selectedMatch = fixturesData[index];
+            if (!selectedMatch) return;
             
             document.getElementById('team-input').value = selectedMatch.opponent;
             document.getElementById('date-input').value = selectedMatch.date;
             document.getElementById('venue-input').value = selectedMatch.venue;
             document.getElementById('comp-input').value = selectedMatch.competition;
 
+            resolveOpponentImagePipeline();
+        }
+
+        function onManualImageChange() {
+            resolveOpponentImagePipeline();
+        }
+
+        function onManualTeamTextInput() {
+            resolveOpponentImagePipeline();
+        }
+
+        function resolveOpponentImagePipeline() {
             const manualImageDropdown = document.getElementById('manual-opponent-logo-select');
+            const currentTeamName = document.getElementById('team-input').value;
             const meta = getRepoMetadata();
+            
+            let targetFileName = "";
 
             if (manualImageDropdown.value === "AUTO") {
-                // Sanitize opponent string matching profile structure rules securely
-                const sanitizedOpponentName = encodeURIComponent(selectedMatch.opponent);
-                opponentLogoImg.src = `https://raw.githubusercontent.com/${meta.owner}/${meta.repo}/main/Images/Club%20Images/${sanitizedOpponentName}.png`;
-            } else if (manualImageDropdown.value !== "") {
-                opponentLogoImg.src = `https://raw.githubusercontent.com/${meta.owner}/${meta.repo}/main/Images/Club%20Images/${manualImageDropdown.value}`;
+                const match = findBestImageMatch(currentTeamName);
+                targetFileName = match ? match : (currentTeamName ? `${currentTeamName}.png` : "");
+            } else {
+                targetFileName = manualImageDropdown.value;
+            }
+
+            if (targetFileName) {
+                const safeUrlPath = encodeURI(targetFileName);
+                opponentLogoImg.src = `https://raw.githubusercontent.com/${meta.owner}/${meta.repo}/main/Images/Club%20Images/${safeUrlPath}`;
+                console.log("Loading Asset Path target:", opponentLogoImg.src);
+            } else {
+                opponentLogoImg.src = "";
             }
 
             updateCanvasPreview();
@@ -355,11 +377,11 @@
             const accentColor = document.getElementById('bg-color').value;
             const fontColor = document.getElementById('text-color').value;
 
-            // Canvas Background Base Layers Setup
+            // Paint Canvas base frame background
             ctx.fillStyle = "#0b0f19";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Geometry Graphic Accent Intersections
+            // Left asymmetrical graphical background geometric shape overlay
             ctx.fillStyle = accentColor;
             ctx.beginPath();
             ctx.moveTo(0, 0);
@@ -368,22 +390,23 @@
             ctx.lineTo(0, canvas.height);
             ctx.fill();
 
-            // Render Center "VS" Element separator block
+            // Dynamic typography configurations setup 
             ctx.fillStyle = "#ffffff";
             ctx.font = "italic bold 48px sans-serif";
             ctx.textAlign = "center";
             ctx.fillText("VS", canvas.width * 0.5, canvas.height * 0.42);
 
-            // Base Image Composition Layout Blocks
+            // Draw Home Club Crest Shield
             try {
                 ctx.drawImage(clubLogoImg, canvas.width * 0.12 - 75, canvas.height * 0.30 - 75, 150, 150);
             } catch(e) {
                 ctx.fillStyle = "#ffffff";
                 ctx.font = "16px sans-serif";
-                ctx.fillText("Waun Galaxy Logo", canvas.width * 0.12, canvas.height * 0.30);
+                ctx.fillText("Waun Galaxy", canvas.width * 0.12, canvas.height * 0.30);
             }
 
-            if(opponentLogoImg.complete && opponentLogoImg.naturalWidth !== 0) {
+            // Draw Opponent Crest Shield
+            if(opponentLogoImg.src && opponentLogoImg.complete && opponentLogoImg.naturalWidth !== 0) {
                 ctx.drawImage(opponentLogoImg, canvas.width * 0.88 - 75, canvas.height * 0.30 - 75, 150, 150);
             } else {
                 ctx.fillStyle = "#e2e8f0";
@@ -392,23 +415,23 @@
                 ctx.fill();
                 ctx.fillStyle = "#475569";
                 ctx.font = "bold 14px sans-serif";
-                ctx.fillText("NO IMAGE", canvas.width * 0.88, canvas.height * 0.31);
+                ctx.fillText(opponentLogoImg.src ? "LOADING/NO IMG" : "NO ASSET", canvas.width * 0.88, canvas.height * 0.31);
             }
 
-            // Text Typography Compositor Engine Output
+            // Graphic Copy Rendering Layouts Engine
             ctx.fillStyle = fontColor;
             ctx.textAlign = "center";
 
             ctx.font = "bold 28px sans-serif";
-            ctx.fillText(comp.toUpperCase(), canvas.width * 0.5, canvas.height * 0.65);
+            ctx.fillText(comp.toUpperCase() || "MATCHDAY PREVIEW", canvas.width * 0.5, canvas.height * 0.65);
 
             ctx.font = "italic 800 52px sans-serif";
-            ctx.fillText(team, canvas.width * 0.5, canvas.height * 0.74);
+            ctx.fillText(team || "OPPONENT CLUB", canvas.width * 0.5, canvas.height * 0.74);
 
             ctx.font = "500 24px sans-serif";
             ctx.fillStyle = "#94a3b8";
-            ctx.fillText(date, canvas.width * 0.5, canvas.height * 0.82);
-            ctx.fillText(venue, canvas.width * 0.5, canvas.height * 0.87);
+            ctx.fillText(date || "DATE & TIME PENDING", canvas.width * 0.5, canvas.height * 0.82);
+            ctx.fillText(venue || "VENUE SCHEDULE", canvas.width * 0.5, canvas.height * 0.87);
         }
     </script>
 </body>
