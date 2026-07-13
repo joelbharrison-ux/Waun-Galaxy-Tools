@@ -3,174 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Club Media & Matchday Generator</title>
+    <title>Waun Galaxy Matchday Media Engine</title>
     <style>
         :root {
-            --bg-primary: #121824;
+            --bg-primary: #0f172a;
             --bg-secondary: #1e293b;
-            --accent-default: #d97706;
-            --text-light: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
+            --accent: #d97706;
+            --text: #f8fafc;
+            --border: #334155;
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--bg-primary); color: var(--text-light); padding: 20px; display: flex; flex-direction: column; min-height: 100vh; }
-        
-        header { margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; }
-        header h1 { font-size: 24px; color: var(--text-light); }
-        header p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
-
-        .app-container { display: grid; grid-template-columns: 450px 1fr; gap: 20px; flex-grow: 1; align-items: start; }
-        
-        .config-panel { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; max-height: calc(100vh - 100px); overflow-y: auto; }
-        .section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
-        .section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .section-title { font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
-        
-        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-light); }
-        select, input[type="text"], input[type="color"], textarea { width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-light); font-size: 14px; margin-bottom: 12px; transition: border 0.2s; }
-        select:focus, input:focus, textarea:focus { border-color: var(--accent-default); outline: none; }
-        
-        .row-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        
-        .status-badge { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 10px; }
-        .status-badge.success { background: rgba(16, 185, 129, 0.15); color: var(--success); }
-        .status-badge.warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-        .status-badge.info { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-        .status-badge.danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
-
-        .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        .tab-btn { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 10px; color: var(--text-muted); font-weight: 600; border-radius: 6px; cursor: pointer; font-size: 13px; text-align: center; }
-        .tab-btn.active { background: var(--accent-default); color: var(--text-light); border-color: var(--accent-default); }
-
-        .preview-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; position: sticky; top: 20px; min-height: 600px; }
-        .canvas-container { background: #000; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); border-radius: 4px; overflow: hidden; position: relative; }
-        canvas { display: block; max-width: 100%; height: auto; }
-        
-        .action-btn { width: 100%; background: var(--accent-default); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px; margin-top: 15px; transition: opacity 0.2s; }
-        .action-btn:hover { opacity: 0.9; }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+        .panel {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            background-color: #000;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .row-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        h1 { margin: 0 0 10px 0; font-size: 1.75rem; text-align: center; }
+        h2 { margin: 0 0 16px 0; font-size: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            background-color: var(--accent);
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Club Media &amp; Announcement Canvas Engine</h1>
-        <p>Dynamic media engine reading direct repository data matrix layers using relative asset positioning.</p>
-    </header>
+    <h1>🌌 Waun Galaxy Media Engine</h1>
+    <div class="badge">Production Environment Pipeline</div>
 
-    <div class="app-container">
-        <div class="config-panel">
+    <div class="container">
+        <!-- Control Panel -->
+        <div class="panel">
+            <h2>Graphic Configuration</h2>
             
-            <!-- Global Identity Branding -->
-            <div class="section">
-                <div class="section-title">Club Identity</div>
-                <div class="row-group">
-                    <div>
-                        <label>Primary Brand Color</label>
-                        <input type="color" id="color-primary" value="#1e3a8a">
-                    </div>
-                    <div>
-                        <label>Accent Highlights</label>
-                        <input type="color" id="color-accent" value="#2db92d">
-                    </div>
-                </div>
-                <label>Our Club Identity Name</label>
-                <input type="text" id="club-name" value="Waunarlwydd Galaxy">
-                <label>Our Fixed Brand Crest Asset Path</label>
-                <div style="font-family: monospace; font-size: 12px; background:#121824; padding:8px; border-radius:6px; border:1px solid var(--border-color); color: var(--success)">
-                    WaunG.png (Main Folder Target)
-                </div>
-            </div>
-
-            <!-- Execution Mode Toggle -->
-            <div class="section">
-                <div class="section-title">Execution Mode</div>
-                <div class="mode-tabs">
-                    <div class="tab-btn active" onclick="setMode('csv')">Auto-Skim CSV Feed</div>
-                    <div class="tab-btn" onclick="setMode('manual')">Manual Marketing</div>
-                </div>
-            </div>
-
-            <!-- CSV Active Dynamic Interface Panel -->
-            <div id="panel-csv" class="section">
-                <div class="section-title">Data Ingestion Engine</div>
-                <label>Select CSV Live Record Feed Row</label>
-                <select id="csv-row-selector" onchange="onFixtureRowChange()">
-                    <option value="">Loading fixtures.csv...</option>
+            <div class="form-group">
+                <label for="fixture-selector">Select Active Fixture Row</label>
+                <select id="fixture-selector" onchange="onFixtureRowChange()">
+                    <option value="">-- Loading dynamic schedule CSV data --</option>
                 </select>
-
-                <div id="skimming-status" class="status-badge info">Mode: Connecting to Data File</div>
-                
-                <!-- Asset Configuration Diagnostics Panel -->
-                <div style="margin-top: 10px; padding: 12px; background: var(--bg-primary); border-radius: 6px; border: 1px solid var(--border-color);">
-                    <div class="section-title" style="font-size: 11px;">Image Resource Management</div>
-                    
-                    <label>Target Opponent Path:</label>
-                    <div id="logo-path-indicator" style="font-family: monospace; font-size: 11px; margin-bottom: 8px; color: var(--text-muted);">
-                        Images/Club Images/
-                    </div>
-                    
-                    <div id="logo-match-badge" class="status-badge warning">System Idle</div>
-                    
-                    <!-- Dynamic Dropdown Auto-Populated from GitHub Main branch -->
-                    <div style="margin-top: 10px;">
-                        <label style="color: #f59e0b;">📁 Select Backup Opponent File</label>
-                        <select id="manual-opponent-logo-select" onchange="onManualOpponentLogoChange()">
-                            <option value="AUTO">⚙️ Auto-Match via CSV Row</option>
-                            <option value="" disabled>Scanning main branch folder...</option>
-                        </select>
-                    </div>
-                </div>
             </div>
 
-            <!-- Manual Media Inputs Layout Block -->
-            <div id="panel-manual" class="section" style="display:none;">
-                <div class="section-title">Manual Announcement Selection</div>
-                <label>Template Layout Focus Type</label>
-                <select id="manual-template-type" onchange="onManualTypeChange()">
-                    <option value="signing">Player Signing Announcement</option>
-                    <option value="sponsorship">Corporate Sponsorship Announcement</option>
+            <div class="form-group">
+                <label for="manual-opponent-logo-select">Asset Registry Look-up (Images/Club Images)</label>
+                <select id="manual-opponent-logo-select" onchange="updateCanvasPreview()">
+                    <option value="AUTO">⚙️ Auto-Match via CSV Row</option>
                 </select>
+            </div>
 
-                <div id="fields-signing">
-                    <label>Player Name</label>
-                    <input type="text" id="player-name" value="Marcus Sterling" oninput="updateCanvasPreview()">
-                    <label>Position / Role</label>
-                    <input type="text" id="player-position" value="Central Attacking Midfielder" oninput="oninput="updateCanvasPreview()">
-                    <label>Squad Number assignment</label>
-                    <input type="text" id="player-number" value="10" oninput="updateCanvasPreview()">
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
+
+            <div class="row-grid">
+                <div class="form-group">
+                    <label for="comp-input">Competition</label>
+                    <input type="text" id="comp-input" oninput="updateCanvasPreview()" value="League Match">
                 </div>
-
-                <div id="fields-sponsorship" style="display:none;">
-                    <label>Corporate Sponsor Corporate Identity</label>
-                    <input type="text" id="sponsor-name" value="Apex Industries Global" oninput="updateCanvasPreview()">
-                    <label>Sponsorship Tier Designation Level</label>
-                    <input type="text" id="sponsor-tier" value="Official Lead Principal Partner" oninput="updateCanvasPreview()">
+                <div class="form-group">
+                    <label for="date-input">Date & Time</label>
+                    <input type="text" id="date-input" oninput="updateCanvasPreview()" value="Saturday 2:30 PM">
                 </div>
             </div>
 
-            <!-- Output Properties -->
-            <div class="section">
-                <div class="section-title">Canvas Output Properties</div>
-                <label>Layout Export Framing Aspect Ratio</label>
-                <select id="canvas-aspect" onchange="resizeMediaCanvas()">
-                    <option value="1:1">Square Grid Layout (1:1 - Instagram Feed)</option>
-                    <option value="9:16">Vertical Immersive Frame (9:16 - Stories/Mobile)</option>
-                </select>
-                <button class="action-btn" onclick="downloadGeneratedGraphic()">Download Media Package (.PNG)</button>
+            <div class="row-grid">
+                <div class="form-group">
+                    <label for="team-input">Opponent Team</label>
+                    <input type="text" id="team-input" oninput="updateCanvasPreview()" value="Opponent FC">
+                </div>
+                <div class="form-group">
+                    <label for="venue-input">Venue Location</label>
+                    <input type="text" id="venue-input" oninput="updateCanvasPreview()" value="Away Ground">
+                </div>
             </div>
 
+            <div class="row-grid">
+                <div class="form-group">
+                    <label for="bg-color">Graphic Accent Tint</label>
+                    <input type="color" id="bg-color" value="#1e3a8a">
+                </div>
+                <div class="form-group">
+                    <label for="text-color">Overlay Text Tint</label>
+                    <input type="color" id="text-color" value="#ffffff">
+                </div>
+            </div>
         </div>
 
-        <!-- Preview Interactive Render Frame Area -->
-        <div class="preview-panel">
-            <div class="canvas-container" id="canvas-frame">
-                <canvas id="clubMediaCanvas" width="1080" height="1080"></canvas>
-            </div>
+        <!-- Canvas Preview Panel -->
+        <div class="panel preview-panel">
+            <h2>Live Engine Preview</h2>
+            <canvas id="clubMediaCanvas" width="800" height="800"></canvas>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 12px; text-align: center;">
+                Right-click the graphic frame preview window to save or export the generated image asset.
+            </p>
         </div>
     </div>
 
@@ -183,6 +171,7 @@
         let clubLogoImg = new Image();
         let opponentLogoImg = new Image();
         
+        // Root base home assets setup
         clubLogoImg.src = 'WaunG.png';
         
         clubLogoImg.onload = () => updateCanvasPreview();
@@ -198,36 +187,29 @@
             setupColorChangeListeners();
         });
 
-        // Fully automated location inspector rules
+        // Precision URL Sniffer for github.com/joelbharrison-ux/Waun-Galaxy-Tools
         function getRepoMetadata() {
-            let owner = "WaunarlwyddGalaxy";
-            let repo = "media-engine";
-            
             const hostname = window.location.hostname;
             const pathname = window.location.pathname;
+            
+            // Standard target parameters matched exactly to your live repository profile
+            let owner = "joelbharrison-ux"; 
+            let repo = "Waun-Galaxy-Tools";
 
-            // Scenario A: Standard github.io domain hosting structure
+            const pathParts = pathname.split('/').filter(p => p.trim().length > 0);
+
+            // Case 1: Running live via GitHub Pages (e.g., joelbharrison-ux.github.io/Waun-Galaxy-Tools/)
             if (hostname.includes("github.io")) {
                 owner = hostname.split('.')[0];
-                const parts = pathname.split('/').filter(p => p.length > 0);
-                if (parts.length > 0) {
-                    repo = parts[0];
+                if (pathParts.length > 0) {
+                    repo = pathParts[0];
                 }
             } 
-            // Scenario B: Live repository file viewing views (raw code, preview tools or environments)
-            else if (pathname.includes("/blob/") || pathname.includes("/raw/")) {
-                const parts = pathname.split('/').filter(p => p.length > 0);
-                if (parts.length >= 2) {
-                    owner = parts[0];
-                    repo = parts[1];
-                }
-            }
-            // Scenario C: Generic subfolder handling configurations 
-            else {
-                const parts = pathname.split('/').filter(p => p.length > 0);
-                if (parts.length >= 2) {
-                    owner = parts[0];
-                    repo = parts[1];
+            // Case 2: Opened directly inside the github.com file interface layers
+            else if (hostname.includes("github.com")) {
+                if (pathParts.length >= 2) {
+                    owner = pathParts[0];
+                    repo = pathParts[1];
                 }
             }
             
@@ -238,13 +220,15 @@
             const dropdown = document.getElementById('manual-opponent-logo-select');
             const meta = getRepoMetadata();
             
-            console.log(`Auto-detected Repository Location Matrix: Owner="${meta.owner}", Repo="${meta.repo}"`);
+            // Diagnostics printing directly out to F12 Console Window
+            console.log("%c⚓ DATA INGESTION ENGINE ACTIVE", "color: #d97706; font-weight: bold;");
+            console.table(meta);
             
             const apiUrl = `https://api.github.com/repos/${meta.owner}/${meta.repo}/contents/Images/Club%20Images?ref=main`;
 
             fetch(apiUrl)
                 .then(res => {
-                    if(!res.ok) throw new Error(`HTTP Error response from API framework: ${res.status}`);
+                    if(!res.ok) throw new Error(`GitHub API Rejected Request (Status: ${res.status}). Verify character casing parameters.`);
                     return res.json();
                 })
                 .then(data => {
@@ -262,403 +246,169 @@
                     onFixtureRowChange();
                 })
                 .catch(err => {
-                    console.error("Could not dynamic-scan GitHub branch directory trees: ", err);
+                    console.error("Dynamic Image Scrape Failed: ", err.message);
                     dropdown.innerHTML = `
                         <option value="AUTO">⚙️ Auto-Match via CSV Row</option>
-                        <option value="" disabled>❌ Scan failed. Ensure file is hosted on GitHub or check repo visibility.</option>
+                        <option value="" disabled>❌ Auto-detect failed (${meta.owner}/${meta.repo})</option>
                     `;
                 });
         }
 
         function loadFixturesCSVFile() {
-            const statusBox = document.getElementById('skimming-status');
-            
+            // Attempt extraction of native fixtures file relative repository root pathing structures
             fetch('fixtures.csv')
-                .then(response => {
-                    if (!response.ok) throw new Error("Could not find fixtures.csv");
-                    return response.text();
+                .then(res => {
+                    if(!res.ok) throw new Error("Local CSV file not found, applying procedural generation structural fallbacks.");
+                    return res.text();
                 })
                 .then(text => {
-                    parseCSVDataMatrix(text);
-                    populateCSVSelectorOptions();
-                    onFixtureRowChange();
+                    parseFixturesCSV(text);
                 })
-                .catch(error => {
-                    console.error(error);
-                    statusBox.className = "status-badge danger";
-                    statusBox.textContent = "Error: fixtures.csv not detected.";
-                    
-                    mockFixturesCSV = [{ "Date": "No CSV Found", "Time": "00:00", "Opponent": "Pontarddulais Town", "Venue": "Home", "Team Competition": "Setup Required", "Home score": "", "Away score": "", "Scorers": "" }];
-                    populateCSVSelectorOptions();
-                    onFixtureRowChange();
+                .catch(err => {
+                    console.log(err.message);
+                    generateMockFallbackCSV();
                 });
         }
 
-        function parseCSVDataMatrix(csvText) {
-            const lines = csvText.split(/\r?\n/);
-            if (lines.length === 0) return;
-            
-            const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+        function parseFixturesCSV(text) {
+            const lines = text.split('\n');
             mockFixturesCSV = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                
-                let matches = [];
-                let row = lines[i];
-                let insideQuote = false;
-                let entry = "";
-                
-                for (let c = 0; c < row.length; c++) {
-                    let char = row[c];
-                    if (char === '"' || char === "'") {
-                        insideQuote = !insideQuote;
-                    } else if (char === ',' && !insideQuote) {
-                        matches.push(entry.trim());
-                        entry = "";
-                    } else {
-                        entry += char;
-                    }
-                }
-                matches.push(entry.trim());
-                
-                const rowData = {};
-                headers.forEach((header, index) => {
-                    let val = matches[index] !== undefined ? matches[index] : "";
-                    rowData[header] = val.replace(/^["']|["']$/g, '');
-                });
-                mockFixturesCSV.push(rowData);
-            }
-        }
-
-        function populateCSVSelectorOptions() {
-            const selector = document.getElementById('csv-row-selector');
-            selector.innerHTML = '';
             
-            mockFixturesCSV.forEach((row, index) => {
-                let statusInfo = (row["Home score"] && row["Home score"] !== "") ? `[RESULT: ${row["Home score"]}-${row["Away score"]}]` : "[UPCOMING]";
-                let option = document.createElement('option');
-                option.value = index;
-                option.textContent = `${row.Date || 'N/A'} - ${row.Opponent || 'Unknown'} ${statusInfo}`;
-                selector.appendChild(option);
+            const dropdown = document.getElementById('fixture-selector');
+            dropdown.innerHTML = '';
+
+            for(let i = 1; i < lines.length; i++) {
+                if(!lines[i].trim()) continue;
+                const columns = lines[i].split(',');
+                if(columns.length >= 4) {
+                    const matchObj = {
+                        opponent: columns[0].trim(),
+                        date: columns[1].trim(),
+                        venue: columns[2].trim(),
+                        competition: columns[3].trim()
+                    };
+                    mockFixturesCSV.push(matchObj);
+                    
+                    let opt = document.createElement('option');
+                    opt.value = mockFixturesCSV.length - 1;
+                    opt.textContent = `${matchObj.competition}: vs ${matchObj.opponent} (${matchObj.date})`;
+                    dropdown.appendChild(opt);
+                }
+            }
+            onFixtureRowChange();
+        }
+
+        function generateMockFallbackCSV() {
+            mockFixturesCSV = [
+                { opponent: "Swansea City Academy", date: "Saturday Oct 14 - 14:30", venue: "Gorseinon Ground (Away)", competition: "West Wales Premier League" },
+                { opponent: "Mumbles Rangers", date: "Friday Oct 20 - 19:30", venue: "Underhill Park (Home)", competition: "FAW Welsh Cup" },
+                { opponent: "Pontarddulais Town", date: "Saturday Nov 04 - 14:00", venue: "Coed Bach Park (Away)", competition: "West Wales Premier League" }
+            ];
+            
+            const dropdown = document.getElementById('fixture-selector');
+            dropdown.innerHTML = '';
+            
+            mockFixturesCSV.forEach((match, index) => {
+                let opt = document.createElement('option');
+                opt.value = index;
+                opt.textContent = `[Fallback] ${match.competition} vs ${match.opponent}`;
+                dropdown.appendChild(opt);
             });
-        }
-
-        function setupColorChangeListeners() {
-            document.getElementById('color-primary').addEventListener('input', updateCanvasPreview);
-            document.getElementById('color-accent').addEventListener('input', updateCanvasPreview);
-            document.getElementById('club-name').addEventListener('input', updateCanvasPreview);
-        }
-
-        function setMode(mode) {
-            systemMode = mode;
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            if(mode === 'csv') {
-                document.querySelectorAll('.tab-btn')[0].classList.add('active');
-                document.getElementById('panel-csv').style.display = 'block';
-                document.getElementById('panel-manual').style.display = 'none';
-                onFixtureRowChange();
-            } else {
-                document.querySelectorAll('.tab-btn')[1].classList.add('active');
-                document.getElementById('panel-csv').style.display = 'none';
-                document.getElementById('panel-manual').style.display = 'block';
-                onManualTypeChange();
-            }
-        }
-
-        function onManualTypeChange() {
-            const type = document.getElementById('manual-template-type').value;
-            document.getElementById('fields-signing').style.display = (type === 'signing') ? 'block' : 'none';
-            document.getElementById('fields-sponsorship').style.display = (type === 'sponsorship') ? 'block' : 'none';
-            updateCanvasPreview();
-        }
-
-        function resizeMediaCanvas() {
-            const ratio = document.getElementById('canvas-aspect').value;
-            canvas.width = 1080;
-            canvas.height = (ratio === '1:1') ? 1080 : 1920;
-            updateCanvasPreview();
-        }
-
-        function resolveOpponentImagePipeline(opponentName) {
-            const manualDropdownValue = document.getElementById('manual-opponent-logo-select').value;
-            const pathLabel = document.getElementById('logo-path-indicator');
-            const badge = document.getElementById('logo-match-badge');
-
-            let finalTargetFileName = "";
-
-            if (manualDropdownValue === "AUTO") {
-                if (!opponentName) return;
-                finalTargetFileName = opponentName.toLowerCase().replace(/\s+/g, '_') + '.png';
-                badge.className = "status-badge success";
-                badge.textContent = "Auto Mode: Linked to CSV Value";
-            } else {
-                finalTargetFileName = manualDropdownValue;
-                badge.className = "status-badge warning";
-                badge.textContent = "Override Engaged: Forced Selection";
-            }
-
-            pathLabel.textContent = `Images/Club Images/${finalTargetFileName}`;
-            opponentLogoImg.src = `Images/Club Images/${finalTargetFileName}`;
+            onFixtureRowChange();
         }
 
         function onFixtureRowChange() {
-            if (mockFixturesCSV.length === 0) return;
-            const selectedIdx = document.getElementById('csv-row-selector').value;
-            const rowData = mockFixturesCSV[selectedIdx];
-            if (!rowData) return;
-            
-            resolveOpponentImagePipeline(rowData.Opponent);
+            const index = document.getElementById('fixture-selector').value;
+            if (index === "" || !mockFixturesCSV[index]) return;
 
-            const statusBox = document.getElementById('skimming-status');
-            if (rowData["Home score"] && rowData["Home score"] !== "") {
-                statusBox.className = "status-badge success";
-                statusBox.textContent = "Data Detected: Match Result Screen Layout";
-            } else {
-                statusBox.className = "status-badge info";
-                statusBox.textContent = "Data Evaluated: Upcoming Match Day Mode";
+            const selectedMatch = mockFixturesCSV[index];
+            
+            document.getElementById('team-input').value = selectedMatch.opponent;
+            document.getElementById('date-input').value = selectedMatch.date;
+            document.getElementById('venue-input').value = selectedMatch.venue;
+            document.getElementById('comp-input').value = selectedMatch.competition;
+
+            const manualImageDropdown = document.getElementById('manual-opponent-logo-select');
+            const meta = getRepoMetadata();
+
+            if (manualImageDropdown.value === "AUTO") {
+                // Sanitize opponent string matching profile structure rules securely
+                const sanitizedOpponentName = encodeURIComponent(selectedMatch.opponent);
+                opponentLogoImg.src = `https://raw.githubusercontent.com/${meta.owner}/${meta.repo}/main/Images/Club%20Images/${sanitizedOpponentName}.png`;
+            } else if (manualImageDropdown.value !== "") {
+                opponentLogoImg.src = `https://raw.githubusercontent.com/${meta.owner}/${meta.repo}/main/Images/Club%20Images/${manualImageDropdown.value}`;
             }
+
             updateCanvasPreview();
         }
 
-        function onManualOpponentLogoChange() {
-            let oppName = "Unknown";
-            if (mockFixturesCSV.length > 0) {
-                const selectedIdx = document.getElementById('csv-row-selector').value;
-                if (mockFixturesCSV[selectedIdx]) {
-                    oppName = mockFixturesCSV[selectedIdx].Opponent;
-                }
-            }
-            resolveOpponentImagePipeline(oppName);
+        function setupColorChangeListeners() {
+            document.getElementById('bg-color').addEventListener('input', updateCanvasPreview);
+            document.getElementById('text-color').addEventListener('input', updateCanvasPreview);
         }
 
         function updateCanvasPreview() {
-            ctx.fillStyle = "#111827";
+            const comp = document.getElementById('comp-input').value;
+            const date = document.getElementById('date-input').value;
+            const team = document.getElementById('team-input').value;
+            const venue = document.getElementById('venue-input').value;
+            const accentColor = document.getElementById('bg-color').value;
+            const fontColor = document.getElementById('text-color').value;
+
+            // Canvas Background Base Layers Setup
+            ctx.fillStyle = "#0b0f19";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            const primaryColor = document.getElementById('color-primary').value;
-            const accentColor = document.getElementById('color-accent').value;
-            const clubName = document.getElementById('club-name').value;
-
-            ctx.fillStyle = primaryColor;
+            // Geometry Graphic Accent Intersections
+            ctx.fillStyle = accentColor;
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            ctx.lineTo(canvas.width * 0.75, 0);
-            ctx.lineTo(canvas.width * 0.25, canvas.height);
+            ctx.lineTo(canvas.width * 0.45, 0);
+            ctx.lineTo(canvas.width * 0.30, canvas.height);
             ctx.lineTo(0, canvas.height);
             ctx.fill();
 
-            ctx.fillStyle = accentColor;
-            ctx.globalAlpha = 0.3;
-            ctx.beginPath();
-            ctx.moveTo(canvas.width, canvas.height * 0.4);
-            ctx.lineTo(canvas.width * 0.4, canvas.height);
-            ctx.lineTo(canvas.width, canvas.height);
-            ctx.fill();
-            ctx.globalAlpha = 1.0; 
-
-            if (systemMode === 'csv') {
-                if (mockFixturesCSV.length === 0) return;
-                const selectedIdx = document.getElementById('csv-row-selector').value;
-                const rowData = mockFixturesCSV[selectedIdx];
-                if (!rowData) return;
-                
-                if (rowData["Home score"] && rowData["Home score"] !== "") {
-                    renderMatchResultLayout(rowData, clubName, accentColor);
-                } else {
-                    renderUpcomingFixtureLayout(rowData, clubName, accentColor);
-                }
-            } else {
-                const manualType = document.getElementById('manual-template-type').value;
-                if(manualType === 'signing') {
-                    renderPlayerSigningLayout(clubName, accentColor);
-                } else {
-                    renderSponsorshipLayout(clubName, accentColor);
-                }
-            }
-        }
-
-        function renderUpcomingFixtureLayout(row, clubName, accent) {
+            // Render Center "VS" Element separator block
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 44px Arial";
+            ctx.font = "italic bold 48px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("UPCOMING FIXTURE", canvas.width / 2, canvas.height * 0.15);
+            ctx.fillText("VS", canvas.width * 0.5, canvas.height * 0.42);
 
-            ctx.fillStyle = accent;
-            ctx.font = "900 32px Arial";
-            ctx.fillText((row["Team Competition"] || "MATCH DAY").toUpperCase(), canvas.width / 2, canvas.height * 0.22);
-
-            drawAssetCrestImage(canvas.width * 0.25, canvas.height * 0.4, clubLogoImg, clubName.substring(0,2).toUpperCase(), accent);
-            
-            const oppName = row.Opponent || "Unknown";
-            drawAssetCrestImage(canvas.width * 0.75, canvas.height * 0.4, opponentLogoImg, oppName.substring(0,2).toUpperCase(), "#ffffff");
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 38px Arial";
-            ctx.fillText(clubName, canvas.width * 0.25, canvas.height * 0.55);
-            ctx.fillText(oppName, canvas.width * 0.75, canvas.height * 0.55);
-
-            ctx.fillStyle = accent;
-            ctx.font = "bold 64px Arial";
-            ctx.fillText("VS", canvas.width / 2, canvas.height * 0.42);
-
-            let detailsY = canvas.height * 0.72;
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 34px Arial";
-            ctx.fillText(`VENUE: ${(row.Venue || 'Home').toUpperCase()} GROUND`, canvas.width / 2, detailsY);
-            ctx.fillText(`DATE: ${row.Date || 'TBD'}`, canvas.width / 2, detailsY + 60);
-            ctx.fillText(`KICK-OFF TIME: ${row.Time || 'TBD'}`, canvas.width / 2, detailsY + 120);
-        }
-
-        function renderMatchResultLayout(row, clubName, accent) {
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 44px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("MATCH FINAL RESULT", canvas.width / 2, canvas.height * 0.15);
-
-            ctx.fillStyle = accent;
-            ctx.font = "900 32px Arial";
-            ctx.fillText((row["Team Competition"] || "MATCH DAY").toUpperCase(), canvas.width / 2, canvas.height * 0.22);
-
-            drawAssetCrestImage(canvas.width * 0.25, canvas.height * 0.4, clubLogoImg, clubName.substring(0,2).toUpperCase(), accent);
-            
-            const oppName = row.Opponent || "Unknown";
-            drawAssetCrestImage(canvas.width * 0.75, canvas.height * 0.4, opponentLogoImg, oppName.substring(0,2).toUpperCase(), "#ffffff");
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 38px Arial";
-            ctx.fillText(clubName, canvas.width * 0.25, canvas.height * 0.55);
-            ctx.fillText(oppName, canvas.width * 0.75, canvas.height * 0.55);
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "black 110px Arial";
-            ctx.fillText(`${row["Home score"]} - ${row["Away score"]}`, canvas.width / 2, canvas.height * 0.43);
-
-            if(row.Scorers) {
-                ctx.fillStyle = "#94a3b8";
-                ctx.font = "italic 28px Arial";
-                ctx.fillText("Scorers Board:", canvas.width / 2, canvas.height * 0.68);
-                
+            // Base Image Composition Layout Blocks
+            try {
+                ctx.drawImage(clubLogoImg, canvas.width * 0.12 - 75, canvas.height * 0.30 - 75, 150, 150);
+            } catch(e) {
                 ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 30px Arial";
-                ctx.fillText(row.Scorers, canvas.width / 2, canvas.height * 0.73);
+                ctx.font = "16px sans-serif";
+                ctx.fillText("Waun Galaxy Logo", canvas.width * 0.12, canvas.height * 0.30);
             }
 
-            ctx.fillStyle = accent;
-            ctx.font = "bold 28px Arial";
-            ctx.fillText(`Match Records Saved at: ${row.Venue || 'Stadium'}`, canvas.width / 2, canvas.height * 0.88);
-        }
-
-        function renderPlayerSigningLayout(clubName, accent) {
-            const pName = document.getElementById('player-name').value;
-            const pPos = document.getElementById('player-position').value;
-            const pNum = document.getElementById('player-number').value;
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 42px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(clubName.toUpperCase(), canvas.width / 2, canvas.height * 0.15);
-
-            ctx.fillStyle = accent;
-            ctx.font = "900 72px Arial";
-            ctx.fillText("NEW SIGNING ANNOUNCEMENT", canvas.width / 2, canvas.height * 0.28);
-
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 4;
-            ctx.strokeRect(canvas.width / 2 - 150, canvas.height * 0.38, 300, 350);
-            
-            ctx.fillStyle = "#1e293b";
-            ctx.fillRect(canvas.width / 2 - 150, canvas.height * 0.38, 300, 350);
-            
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 24px Arial";
-            ctx.fillText("[ Player Photo Frame ]", canvas.width / 2, canvas.height * 0.55);
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "900 64px Arial";
-            ctx.fillText(pName.toUpperCase(), canvas.width / 2, canvas.height * 0.78);
-
-            ctx.fillStyle = accent;
-            ctx.font = "bold 36px Arial";
-            ctx.fillText(pPos, canvas.width / 2, canvas.height * 0.84);
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 80px Arial";
-            ctx.fillText(`SQUAD NO. ${pNum}`, canvas.width / 2, canvas.height * 0.93);
-        }
-
-        function renderSponsorshipLayout(clubName, accent) {
-            const sName = document.getElementById('sponsor-name').value;
-            const sTier = document.getElementById('sponsor-tier').value;
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 44px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(clubName.toUpperCase(), canvas.width / 2, canvas.height * 0.18);
-
-            ctx.fillStyle = accent;
-            ctx.font = "900 68px Arial";
-            ctx.fillText("PROUD PARTNERSHIP ANNOUNCEMENT", canvas.width / 2, canvas.height * 0.32);
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "italic 32px Arial";
-            ctx.fillText("We are thrilled to welcome our new corporate ally to the club family:", canvas.width / 2, canvas.height * 0.45);
-
-            ctx.fillStyle = "#0f172a";
-            ctx.fillRect(canvas.width * 0.1, canvas.height * 0.52, canvas.width * 0.8, 220);
-            ctx.strokeStyle = accent;
-            ctx.lineWidth = 3;
-            ctx.strokeRect(canvas.width * 0.1, canvas.height * 0.52, canvas.width * 0.8, 220);
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "900 58px Arial";
-            ctx.fillText(sName, canvas.width / 2, canvas.height * 0.65);
-
-            ctx.fillStyle = accent;
-            ctx.font = "bold 36px Arial";
-            ctx.fillText(sTier.toUpperCase(), canvas.width / 2, canvas.height * 0.82);
-        }
-
-        function drawAssetCrestImage(x, y, imgObject, fallbackInitials, fallbackColor) {
-            ctx.save();
-            ctx.translate(x, y);
-
-            if (imgObject.complete && imgObject.naturalWidth > 0) {
-                const size = 180;
-                ctx.drawImage(imgObject, -size / 2, -size / 2, size, size);
+            if(opponentLogoImg.complete && opponentLogoImg.naturalWidth !== 0) {
+                ctx.drawImage(opponentLogoImg, canvas.width * 0.88 - 75, canvas.height * 0.30 - 75, 150, 150);
             } else {
-                ctx.fillStyle = fallbackColor;
+                ctx.fillStyle = "#e2e8f0";
                 ctx.beginPath();
-                ctx.moveTo(0, -80);
-                ctx.lineTo(70, -40);
-                ctx.lineTo(70, 40);
-                ctx.lineTo(0, 90);
-                ctx.lineTo(-70, 40);
-                ctx.lineTo(-70, -40);
-                ctx.closePath();
+                ctx.arc(canvas.width * 0.88, canvas.height * 0.30, 60, 0, Math.PI * 2);
                 ctx.fill();
-                
-                ctx.strokeStyle = "#ffffff";
-                ctx.lineWidth = 4;
-                ctx.stroke();
-
-                ctx.fillStyle = (fallbackColor === "#ffffff") ? "#111827" : "#ffffff";
-                ctx.font = "bold 36px Arial";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(fallbackInitials, 0, 0);
+                ctx.fillStyle = "#475569";
+                ctx.font = "bold 14px sans-serif";
+                ctx.fillText("NO IMAGE", canvas.width * 0.88, canvas.height * 0.31);
             }
-            ctx.restore();
-        }
 
-        function downloadGeneratedGraphic() {
-            const imageURI = canvas.toDataURL("image/png");
-            const virtualAnchor = document.createElement('a');
-            virtualAnchor.download = `club_announcement_${Date.now()}.png`;
-            virtualAnchor.href = imageURI;
-            document.body.appendChild(virtualAnchor);
-            virtualAnchor.click();
-            document.body.removeChild(virtualAnchor);
+            // Text Typography Compositor Engine Output
+            ctx.fillStyle = fontColor;
+            ctx.textAlign = "center";
+
+            ctx.font = "bold 28px sans-serif";
+            ctx.fillText(comp.toUpperCase(), canvas.width * 0.5, canvas.height * 0.65);
+
+            ctx.font = "italic 800 52px sans-serif";
+            ctx.fillText(team, canvas.width * 0.5, canvas.height * 0.74);
+
+            ctx.font = "500 24px sans-serif";
+            ctx.fillStyle = "#94a3b8";
+            ctx.fillText(date, canvas.width * 0.5, canvas.height * 0.82);
+            ctx.fillText(venue, canvas.width * 0.5, canvas.height * 0.87);
         }
     </script>
 </body>
