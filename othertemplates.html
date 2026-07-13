@@ -74,6 +74,10 @@
             outline: none;
             border-color: var(--accent);
         }
+        input[type="file"] {
+            padding: 6px;
+            cursor: pointer;
+        }
         .row-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -117,10 +121,8 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="bg-image-select">Poster Background Pattern</label>
-                    <select id="bg-image-select" onchange="onBackgroundPatternChange()">
-                        <option value="SOLID">🎨 Solid Theme Tint Only</option>
-                    </select>
+                    <label for="bg-file-uploader">Browse Background Poster Image</label>
+                    <input type="file" id="bg-file-uploader" accept="image/*" onchange="onBackgroundFileUploaded()">
                 </div>
             </div>
 
@@ -143,7 +145,7 @@
                     <input type="text" id="team-input" oninput="onManualTeamTextInput()" value="">
                 </div>
                 <div class="form-group">
-                    <label for="date-input">Match Date (DD/MM/YYYY)</label>
+                    <label for="date-input">Match Date (Formatted Output)</label>
                     <input type="text" id="date-input" oninput="updateCanvasPreview()" value="">
                 </div>
             </div>
@@ -202,11 +204,46 @@
         window.addEventListener('load', () => {
             loadFixturesCSVFile();
             scanGitHubMainBranchImages();
-            scanGitHubBackgroundImages();
             setupColorChangeListeners();
         });
 
-        // Precision URL Environment Parsing Engine
+        // Generates the proper ordinal indicator for any given calendar date number
+        function getOrdinalSuffix(day) {
+            if (day > 3 && day < 21) return 'th';
+            switch (day % 10) {
+                case 1:  return "st";
+                case 2:  return "nd";
+                case 3:  return "rd";
+                default: return "th";
+            }
+        }
+
+        // Transforms YYYY-MM-DD string data arrays into "Monday 13th July 2026" long format
+        function formatLongDateString(rawDateStr) {
+            if (!rawDateStr || !rawDateStr.includes('-')) return rawDateStr;
+            
+            const parts = rawDateStr.trim().split('-');
+            if (parts.length !== 3) return rawDateStr;
+
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const day = parseInt(parts[2], 10);
+
+            const dateObj = new Date(year, month, day);
+            
+            // Validate constructed date calculation footprint
+            if (isNaN(dateObj.getTime())) return rawDateStr;
+
+            const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+            const dayName = daysOfWeek[dateObj.getDay()];
+            const monthName = months[dateObj.getMonth()];
+            const ordinal = getOrdinalSuffix(day);
+
+            return `${dayName} ${day}${ordinal} ${monthName} ${year}`;
+        }
+
         function getRepoMetadata() {
             const hostname = window.location.hostname;
             const pathname = window.location.pathname;
@@ -228,11 +265,9 @@
                     repo = pathParts[1];
                 }
             }
-            
             return { owner, repo };
         }
 
-        // Fetches Opposition Logos
         function scanGitHubMainBranchImages() {
             const dropdown = document.getElementById('manual-opponent-logo-select');
             const meta = getRepoMetadata();
@@ -256,28 +291,6 @@
                 .catch(err => console.error("Logo list mapping error: ", err.message));
         }
 
-        // Fetches Background Graphics from the root /Images folder
-        function scanGitHubBackgroundImages() {
-            const dropdown = document.getElementById('bg-image-select');
-            const meta = getRepoMetadata();
-            
-            const apiUrl = `https://api.github.com/repos/${meta.owner}/${meta.repo}/contents/Images?ref=main`;
-
-            fetch(apiUrl)
-                .then(res => res.json())
-                .then(data => {
-                    if(!Array.isArray(data)) return;
-                    const imageFiles = data.filter(item => /\.(png|jpg|jpeg|webp|svg)$/i.test(item.name));
-                    imageFiles.forEach(file => {
-                        let opt = document.createElement('option');
-                        opt.value = file.name;
-                        opt.textContent = `🖼️ ${file.name}`;
-                        dropdown.appendChild(opt);
-                    });
-                })
-                .catch(err => console.error("Background layout read error: ", err.message));
-        }
-
         function loadFixturesCSVFile() {
             const selector = document.getElementById('fixture-selector');
             fetch('fixtures.csv')
@@ -292,30 +305,16 @@
                 });
         }
 
-        // Helper to cleanly convert DD/MM/YYYY text into an evaluation date stamp
-        function parseCustomDateString(dateStr) {
-            if (!dateStr) return new Date(0);
-            const clean = dateStr.split(' ')[0].trim(); // strips away trailing kick-off times if attached to column
-            const parts = clean.split('/');
-            if (parts.length === 3) {
-                // generates standardized chronological signature (YYYY, MM-1, DD)
-                return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
-            }
-            return new Date(dateStr); // fallback parsing strategy if structure is plain text
-        }
-
         function parseFixturesCSV(text) {
             const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
             if (lines.length === 0) return;
 
-            // Header mapping module to align columns dynamically
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
             const idxOpponent = headers.findIndex(h => h.includes('opp'));
             const idxDate = headers.findIndex(h => h.includes('dat'));
             const idxVenue = headers.findIndex(h => h.includes('ven'));
             const idxComp = headers.findIndex(h => h.includes('comp'));
 
-            // Safe dynamic indices assignment fallbacks if header detection misses
             const oIdx = idxOpponent !== -1 ? idxOpponent : 0;
             const dIdx = idxDate !== -1 ? idxDate : 1;
             const vIdx = idxVenue !== -1 ? idxVenue : 2;
@@ -328,24 +327,25 @@
                 if(columns.length > Math.max(oIdx, dIdx, vIdx, cIdx)) {
                     fixturesData.push({
                         opponent: columns[oIdx].trim(),
-                        date: columns[dIdx].trim(),
+                        date: columns[dIdx].trim(), // Expecting YYYY-MM-DD directly from dataset
                         venue: columns[vIdx].trim(),
                         competition: columns[cIdx].trim()
                     });
                 }
             }
 
-            // Chronological Date Sorting Engine Engine (DD/MM/YYYY)
-            fixturesData.sort((a, b) => parseCustomDateString(a.date) - parseCustomDateString(b.date));
+            // Absolute timeline sort execution sorting low date signatures up first
+            fixturesData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            // Populate updated selector options view showing names and dates layout clearly
             const dropdown = document.getElementById('fixture-selector');
             dropdown.innerHTML = '<option value="">-- Choose an Event Match Row --</option>';
 
             fixturesData.forEach((match, index) => {
                 let opt = document.createElement('option');
                 opt.value = index;
-                opt.textContent = `(${match.date}) vs ${match.opponent} [${match.competition}]`;
+                // Formats the selection row text dynamically using the new date syntax engine
+                const displayDate = formatLongDateString(match.date);
+                opt.textContent = `(${displayDate}) vs ${match.opponent} [${match.competition}]`;
                 dropdown.appendChild(opt);
             });
         }
@@ -358,24 +358,25 @@
             if (!selectedMatch) return;
             
             document.getElementById('team-input').value = selectedMatch.opponent;
-            document.getElementById('date-input').value = selectedMatch.date;
             document.getElementById('venue-input').value = selectedMatch.venue;
             document.getElementById('comp-input').value = selectedMatch.competition;
+            
+            // Apply long writing format logic to data inputs field rendering
+            document.getElementById('date-input').value = formatLongDateString(selectedMatch.date);
 
             resolveOpponentImagePipeline();
         }
 
-        function onBackgroundPatternChange() {
-            const bgSelect = document.getElementById('bg-image-select').value;
-            const meta = getRepoMetadata();
-
-            if (bgSelect === "SOLID") {
-                posterBackgroundImg.removeAttribute('src');
-                updateCanvasPreview();
-            } else {
-                const safeUrl = encodeURI(bgSelect);
-                posterBackgroundImg.src = `https://raw.githubusercontent.com/${meta.owner}/${meta.repo}/main/Images/${safeUrl}`;
-                console.log("Loading Poster Background File:", posterBackgroundImg.src);
+        // Processes files selected via the local file browser uploader element
+        function onBackgroundFileUploaded() {
+            const fileInput = document.getElementById('bg-file-uploader');
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    posterBackgroundImg.src = e.target.result;
+                    console.log("Local background image loaded successfully.");
+                };
+                reader.readAsDataURL(fileInput.files[0]);
             }
         }
 
@@ -408,6 +409,7 @@
 
         function onManualImageChange() { resolveOpponentImagePipeline(); }
         function onManualTeamTextInput() { resolveOpponentImagePipeline(); }
+        
         function setupColorChangeListeners() {
             document.getElementById('bg-color').addEventListener('input', updateCanvasPreview);
             document.getElementById('text-color').addEventListener('input', updateCanvasPreview);
@@ -422,35 +424,34 @@
             const accentColor = document.getElementById('bg-color').value;
             const fontColor = document.getElementById('text-color').value;
 
-            // Layer 1: Draw Poster Background Canvas Frame Base
+            // Layer 1: Draw Custom Poster Background Frame base canvas view
             if (posterBackgroundImg.src && posterBackgroundImg.complete && posterBackgroundImg.naturalWidth !== 0) {
                 ctx.drawImage(posterBackgroundImg, 0, 0, canvas.width, canvas.height);
-                // Applies a semi-transparent dark lens cover overlay pattern to protect text scannability
-                ctx.fillStyle = "rgba(11, 15, 25, 0.75)";
+                ctx.fillStyle = "rgba(11, 15, 25, 0.75)"; // semi-transparent protection overlay
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             } else {
                 ctx.fillStyle = "#0b0f19";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            // Layer 2: Geometric Color Identity Mask Splitter
+            // Layer 2: Geometric Color Mask Layout Overlay Split
             ctx.fillStyle = accentColor;
-            ctx.globalAlpha = 0.85; // blending transparency adjustments
+            ctx.globalAlpha = 0.85;
             ctx.beginPath();
             ctx.moveTo(0, 0);
             ctx.lineTo(canvas.width * 0.45, 0);
             ctx.lineTo(canvas.width * 0.30, canvas.height);
             ctx.lineTo(0, canvas.height);
             ctx.fill();
-            ctx.globalAlpha = 1.0; // restore solid canvas paint state
+            ctx.globalAlpha = 1.0;
 
-            // Center Separation Match Hub Label Element
+            // Center Separation Text Hub
             ctx.fillStyle = "#ffffff";
             ctx.font = "italic bold 46px sans-serif";
             ctx.textAlign = "center";
             ctx.fillText("VS", canvas.width * 0.5, canvas.height * 0.38);
 
-            // Draw Waun Galaxy Crest Emblem Element
+            // Draw Home Galaxy Crest Shield Badge
             try {
                 ctx.drawImage(clubLogoImg, canvas.width * 0.15 - 75, canvas.height * 0.28 - 75, 150, 150);
             } catch(e) {
@@ -459,7 +460,7 @@
                 ctx.fillText("Waun Galaxy", canvas.width * 0.15, canvas.height * 0.28);
             }
 
-            // Draw Opponent Crest Emblem Element
+            // Draw Opponent Crest Shield Badge
             const hasValidSrc = opponentLogoImg.getAttribute('src') !== null && opponentLogoImg.src !== "";
             if (hasValidSrc && opponentLogoImg.complete && opponentLogoImg.naturalWidth !== 0) {
                 ctx.drawImage(opponentLogoImg, canvas.width * 0.85 - 75, canvas.height * 0.28 - 75, 150, 150);
@@ -478,29 +479,30 @@
                 ctx.fillText(labelText, canvas.width * 0.85, canvas.height * 0.29);
             }
 
-            // Typography Layout Text Elements Stack Configuration
+            // Typography Engine Rendering Output
             ctx.fillStyle = fontColor;
             ctx.textAlign = "center";
 
-            // Competition Title Row Text Rendering
+            // Competition Title Display Block
             ctx.font = "bold 28px sans-serif";
             ctx.fillText(comp.toUpperCase() || "MATCHDAY PREVIEW", canvas.width * 0.5, canvas.height * 0.58);
 
-            // Squad Selection Classification Row Text Rendering (e.g. First Team)
+            // Team Squad Segment Designation Type Block (e.g. First Team)
             ctx.font = "600 24px sans-serif";
             ctx.fillStyle = "#94a3b8";
             ctx.fillText(squad.toUpperCase(), canvas.width * 0.5, canvas.height * 0.63);
 
-            // Large Opponent Focus Title Highlight Text Rendering
+            // Main Core Focused Target Opponent Name Typography Block
             ctx.font = "italic 800 54px sans-serif";
             ctx.fillStyle = fontColor;
             ctx.fillText(team || "OPPONENT CLUB", canvas.width * 0.5, canvas.height * 0.72);
 
-            // Match Event Schedule Meta Specifications Footer Data Blocks Text Rendering
+            // Formatted Chronological Date Text Output Block
             ctx.font = "bold 26px sans-serif";
-            ctx.fillStyle = "#f59e0b"; // Golden accent color signature for clean text highlight rules
+            ctx.fillStyle = "#f59e0b";
             ctx.fillText(date || "DATE PENDING", canvas.width * 0.5, canvas.height * 0.80);
             
+            // Venue / Time Specification Information Text Block
             ctx.font = "500 24px sans-serif";
             ctx.fillStyle = "#94a3b8";
             ctx.fillText(venue || "VENUE / TIME TBD", canvas.width * 0.5, canvas.height * 0.86);
