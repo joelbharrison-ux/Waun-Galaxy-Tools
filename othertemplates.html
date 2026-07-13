@@ -177,9 +177,14 @@
         clubLogoImg.src = 'WaunG.png';
         
         clubLogoImg.onload = () => updateCanvasPreview();
-        opponentLogoImg.onload = () => updateCanvasPreview();
+        
+        // Let the opponent image handler explicitly force redraws when loading transitions finish
+        opponentLogoImg.onload = () => {
+            console.log("Opponent Image completely loaded and ready for rendering.");
+            updateCanvasPreview();
+        };
         opponentLogoImg.onerror = () => {
-            console.warn("Target opponent graphics file signature unresolvable or missing.");
+            console.warn("Target opponent graphics file signature unresolvable or missing at remote path.");
             updateCanvasPreview();
         };
 
@@ -280,7 +285,6 @@
             for(let i = 1; i < lines.length; i++) {
                 if(!lines[i].trim()) continue;
                 
-                // Splitting columns correctly ensuring simple comma parsed boundaries
                 const columns = lines[i].split(',');
                 if(columns.length >= 4) {
                     const matchObj = {
@@ -354,11 +358,18 @@
             }
 
             if (targetFileName) {
+                // Encode structural URI string safely while preserving target parameter mappings
                 const safeUrlPath = encodeURI(targetFileName);
-                opponentLogoImg.src = `https://raw.githubusercontent.com/${meta.owner}/${meta.repo}/main/Images/Club%20Images/${safeUrlPath}`;
-                console.log("Loading Asset Path target:", opponentLogoImg.src);
+                const targetSrc = `https://raw.githubusercontent.com/${meta.owner}/${meta.repo}/main/Images/Club%20Images/${safeUrlPath}`;
+                
+                // Only rewrite image source parameter path context maps if it genuinely changes
+                if (opponentLogoImg.src !== targetSrc) {
+                    opponentLogoImg.removeAttribute('src'); // Wipe state to prevent canvas rendering stale content
+                    opponentLogoImg.src = targetSrc;
+                    console.log("Loading Asset Path target:", opponentLogoImg.src);
+                }
             } else {
-                opponentLogoImg.src = "";
+                opponentLogoImg.removeAttribute('src');
             }
 
             updateCanvasPreview();
@@ -406,7 +417,8 @@
             }
 
             // Draw Opponent Crest Shield
-            if(opponentLogoImg.src && opponentLogoImg.complete && opponentLogoImg.naturalWidth !== 0) {
+            const hasValidSrc = opponentLogoImg.getAttribute('src') !== null && opponentLogoImg.src !== "";
+            if (hasValidSrc && opponentLogoImg.complete && opponentLogoImg.naturalWidth !== 0) {
                 ctx.drawImage(opponentLogoImg, canvas.width * 0.88 - 75, canvas.height * 0.30 - 75, 150, 150);
             } else {
                 ctx.fillStyle = "#e2e8f0";
@@ -415,7 +427,15 @@
                 ctx.fill();
                 ctx.fillStyle = "#475569";
                 ctx.font = "bold 14px sans-serif";
-                ctx.fillText(opponentLogoImg.src ? "LOADING/NO IMG" : "NO ASSET", canvas.width * 0.88, canvas.height * 0.31);
+                
+                let labelText = "NO ASSET";
+                if (hasValidSrc && !opponentLogoImg.complete) {
+                    labelText = "LOADING...";
+                } else if (hasValidSrc && opponentLogoImg.naturalWidth === 0) {
+                    labelText = "NOT FOUND";
+                }
+                
+                ctx.fillText(labelText, canvas.width * 0.88, canvas.height * 0.31);
             }
 
             // Graphic Copy Rendering Layouts Engine
