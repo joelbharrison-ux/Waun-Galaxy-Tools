@@ -193,7 +193,6 @@
         const canvas = document.getElementById('clubMediaCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Professional Font Setup Integration
         let clubLogoImg = new Image();
         let opponentLogoImg = new Image();
         let posterBackgroundImg = new Image();
@@ -301,7 +300,6 @@
 
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
             
-            // Dynamic column mapping module
             const idxOpponent = headers.findIndex(h => h.includes('opp'));
             const idxDate = headers.findIndex(h => h.includes('dat'));
             const idxVenue = headers.findIndex(h => h.includes('ven'));
@@ -314,7 +312,6 @@
             for(let i = 1; i < lines.length; i++) {
                 const columns = lines[i].split(',');
                 if(columns.length > 0) {
-                    // Extract baseline layout options out cleanly
                     let rowOpponent = idxOpponent !== -1 && columns[idxOpponent] ? columns[idxOpponent].trim() : (columns[0] ? columns[0].trim() : "");
                     let rowDate = idxDate !== -1 && columns[idxDate] ? columns[idxDate].trim() : (columns[1] ? columns[1].trim() : "");
                     let rowVenue = idxVenue !== -1 && columns[idxVenue] ? columns[idxVenue].trim() : (columns[2] ? columns[2].trim() : "");
@@ -322,7 +319,6 @@
                     let rowTeam = idxTeam !== -1 && columns[idxTeam] ? columns[idxTeam].trim() : "First Team";
                     let rowTime = idxTime !== -1 && columns[idxTime] ? columns[idxTime].trim() : "14:30";
 
-                    // Fallback structural parsing logic if time field is appended inside venue context
                     if (idxTime === -1 && rowVenue.includes('@')) {
                         const parts = rowVenue.split('@');
                         rowVenue = parts[0].trim();
@@ -409,7 +405,7 @@
         function updateCanvasPreview() {
             const comp = document.getElementById('comp-input').value.toUpperCase();
             const squad = document.getElementById('squad-input').value.toUpperCase();
-            const date = document.getElementById('date-input').value;
+            const date = document.getElementById('date-input').value.toUpperCase();
             const team = document.getElementById('team-input').value.toUpperCase();
             const venue = document.getElementById('venue-input').value.toUpperCase();
             const time = document.getElementById('time-input').value;
@@ -418,128 +414,116 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Layer 1: Base Background Application Engine
+            // Layer 1: Background Layout Setup
             if (posterBackgroundImg.src && posterBackgroundImg.complete && posterBackgroundImg.naturalWidth !== 0) {
                 ctx.drawImage(posterBackgroundImg, 0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "rgba(10, 15, 30, 0.82)"; 
+                ctx.fillStyle = "rgba(10, 15, 30, 0.85)"; 
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             } else {
                 ctx.fillStyle = "#0c111d";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            // Layer 2: Clean Modern Branding Accents (Top/Bottom Structural Frames)
+            // Frame Styling
             ctx.fillStyle = brandingColor;
-            ctx.fillRect(0, 0, canvas.width, 16);
-            ctx.fillRect(0, canvas.height - 16, canvas.width, 16);
+            ctx.fillRect(0, 0, canvas.width, 24);
+            ctx.fillRect(0, canvas.height - 24, canvas.width, 24);
 
-            // Subtle Background Gradient Vignette Frame overlay
-            let gradient = ctx.createLinearGradient(0, 200, 0, canvas.height);
+            let gradient = ctx.createLinearGradient(0, 150, 0, canvas.height);
             gradient.addColorStop(0, "rgba(12, 17, 29, 0)");
-            gradient.addColorStop(0.5, "rgba(13, 140, 34, 0.15)");
-            gradient.addColorStop(1, "rgba(12, 17, 29, 0.95)");
+            gradient.addColorStop(0.5, "rgba(13, 140, 34, 0.2)");
+            gradient.addColorStop(1, "rgba(12, 17, 29, 0.98)");
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Layer 3: Upper Top Header Metadata Spacing
+            // Layer 2: Top Header Branding Elements
             ctx.textAlign = "center";
             ctx.textBaseline = "top";
             
             ctx.fillStyle = textColor;
-            ctx.font = "bold 24px system-ui, sans-serif";
+            ctx.font = "bold 34px system-ui, sans-serif";
+            ctx.letterSpacing = "8px";
+            ctx.fillText(comp || "MATCHDAY PREVIEW", canvas.width / 2, 75);
+
+            ctx.fillStyle = brandingColor;
+            ctx.font = "900 28px system-ui, sans-serif";
             ctx.letterSpacing = "6px";
-            ctx.fillText(comp || "MATCHDAY PREVIEW", canvas.width / 2, 70);
+            ctx.fillText(squad || "FIRST TEAM", canvas.width / 2, 125);
+            ctx.letterSpacing = "0px"; 
 
-            ctx.fillStyle = "#94a3b8";
-            ctx.font = "800 20px system-ui, sans-serif";
-            ctx.letterSpacing = "4px";
-            ctx.fillText(squad || "FIRST TEAM", canvas.width / 2, 110);
-            ctx.letterSpacing = "0px"; // Reset letterspacing rules
+            // Layer 3: Main Club Crest Setup
+            const logoY = 250;
+            const crestDimension = 260;
 
-            // Layer 4: Balanced Modern Centered Logo Matrix Array
-            const logoY = 280;
-            const crestDimension = 220;
-
-            // Draw Home Side Crest Element Shield
             try {
-                ctx.drawImage(clubLogoImg, (canvas.width * 0.28) - (crestDimension/2), logoY, crestDimension, crestDimension);
+                ctx.drawImage(clubLogoImg, (canvas.width * 0.26) - (crestDimension/2), logoY, crestDimension, crestDimension);
             } catch(e) {
                 ctx.fillStyle = textColor;
-                ctx.font = "bold 24px sans-serif";
-                ctx.fillText("WAUN GALAXY", canvas.width * 0.28, logoY + (crestDimension/2));
+                ctx.font = "bold 28px sans-serif";
+                ctx.fillText("WAUN GALAXY", canvas.width * 0.26, logoY + (crestDimension/2));
             }
 
-            // Center Versus Node Structure Block
             ctx.fillStyle = brandingColor;
             ctx.beginPath();
-            ctx.arc(canvas.width / 2, logoY + (crestDimension/2), 45, 0, Math.PI * 2);
+            ctx.arc(canvas.width / 2, logoY + (crestDimension/2), 55, 0, Math.PI * 2);
             ctx.fill();
             
             ctx.fillStyle = "#ffffff";
-            ctx.font = "italic bold 34px system-ui, sans-serif";
+            ctx.font = "italic bold 40px system-ui, sans-serif";
             ctx.textBaseline = "middle";
             ctx.fillText("VS", canvas.width / 2, logoY + (crestDimension/2));
             ctx.textBaseline = "top";
 
-            // Draw Away Side Crest Element Shield
             const hasValidSrc = opponentLogoImg.getAttribute('src') !== null && opponentLogoImg.src !== "";
             if (hasValidSrc && opponentLogoImg.complete && opponentLogoImg.naturalWidth !== 0) {
-                ctx.drawImage(opponentLogoImg, (canvas.width * 0.72) - (crestDimension/2), logoY, crestDimension, crestDimension);
+                ctx.drawImage(opponentLogoImg, (canvas.width * 0.74) - (crestDimension/2), logoY, crestDimension, crestDimension);
             } else {
                 ctx.fillStyle = "rgba(255, 255, 255, 0.07)";
                 ctx.beginPath();
-                ctx.arc(canvas.width * 0.72, logoY + (crestDimension/2), crestDimension/2, 0, Math.PI * 2);
+                ctx.arc(canvas.width * 0.74, logoY + (crestDimension/2), crestDimension/2, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = "#64748b";
-                ctx.font = "bold 20px sans-serif";
-                ctx.fillText("NO CREST", canvas.width * 0.72, logoY + (crestDimension/2) - 10);
+                ctx.font = "bold 24px sans-serif";
+                ctx.fillText("NO CREST", canvas.width * 0.74, logoY + (crestDimension/2) - 10);
             }
 
-            // Layer 5: Bottom Typography Stack Layout Block
-            const textCenterBaseY = 600;
+            // Layer 4: Big Bold Opponent Team Display
+            const textCenterBaseY = 590;
+            ctx.fillStyle = textColor;
+            ctx.font = "black italic 900 92px system-ui, sans-serif";
+            ctx.fillText(team || "OPPONENT CLUB", canvas.width / 2, textCenterBaseY);
+
+            // Layer 5: Unified Match Details Panel Grouping
+            const panelX = 100;
+            const panelY = 740;
+            const panelWidth = 800;
+            const panelHeight = 180;
+
+            ctx.fillStyle = "rgba(15, 23, 42, 0.65)";
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(panelX, panelY, panelWidth, panelHeight, 12);
+            ctx.fill();
+            ctx.stroke();
+
+            // Centered Stacked Metrics inside the Details Container Box
+            ctx.textAlign = "center";
             
-            // Home Club Label Text Row
+            // Date String
+            ctx.fillStyle = "#f59e0b"; // Golden core layout color highlight accent
+            ctx.font = "bold 34px system-ui, sans-serif";
+            ctx.fillText(date || "DATE PENDING", canvas.width / 2, panelY + 25);
+
+            // Kick-off Time
             ctx.fillStyle = textColor;
-            ctx.font = "black italic 900 68px system-ui, sans-serif";
-            ctx.fillText("WAUN GALAXY FC", canvas.width / 2, textCenterBaseY);
+            ctx.font = "800 32px system-ui, sans-serif";
+            ctx.fillText(time ? `KICK-OFF — ${time}` : "KICK-OFF TIME PENDING", canvas.width / 2, panelY + 75);
 
-            // Versus Connector Text Row
-            ctx.fillStyle = "#64748b";
-            ctx.font = "bold 28px system-ui, sans-serif";
-            ctx.fillText("versus", canvas.width / 2, textCenterBaseY + 80);
-
-            // Target Opponent Focus Team Graphic Text Highlight Box row
-            ctx.fillStyle = textColor;
-            ctx.font = "black italic 900 68px system-ui, sans-serif";
-            ctx.fillText(team || "OPPONENT CLUB", canvas.width / 2, textCenterBaseY + 130);
-
-            // Kickoff Pill Time Block Graphic Highlight
-            if (time) {
-                ctx.fillStyle = brandingColor;
-                const pillWidth = 180;
-                const pillHeight = 54;
-                const pillX = (canvas.width / 2) - (pillWidth / 2);
-                const pillY = textCenterBaseY + 230;
-                
-                ctx.beginPath();
-                ctx.roundRect(pillX, pillY, pillWidth, pillHeight, 8);
-                ctx.fill();
-
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 28px system-ui, sans-serif";
-                ctx.textBaseline = "middle";
-                ctx.fillText(time, canvas.width / 2, pillY + (pillHeight / 2));
-                ctx.textBaseline = "top";
-            }
-
-            // Lower Footer Location Specifications Data Blocks
-            ctx.fillStyle = "#f59e0b"; // Golden core text contrast fill
-            ctx.font = "bold 30px system-ui, sans-serif";
-            ctx.fillText(date || "DATE PENDING", canvas.width / 2, textCenterBaseY + 310);
-
+            // Venue Location
             ctx.fillStyle = "#94a3b8";
-            ctx.font = "600 24px system-ui, sans-serif";
-            ctx.fillText(venue || "VENUE DATA UNSET", canvas.width / 2, textCenterBaseY + 355);
+            ctx.font = "600 28px system-ui, sans-serif";
+            ctx.fillText(venue || "VENUE DATA UNSET", canvas.width / 2, panelY + 125);
         }
     </script>
 </body>
