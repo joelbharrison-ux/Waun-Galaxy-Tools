@@ -155,9 +155,14 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="bg-file-uploader">Background Template Canvas</label>
-                    <input type="file" id="bg-file-uploader" accept="image/*" onchange="onBackgroundFileUploaded()">
+                    <label for="comp-logo-uploader">Competition Logo</label>
+                    <input type="file" id="comp-logo-uploader" accept="image/*" onchange="onCompLogoUploaded()">
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label for="bg-file-uploader">Background Template Canvas</label>
+                <input type="file" id="bg-file-uploader" accept="image/*" onchange="onBackgroundFileUploaded()">
             </div>
 
             <hr>
@@ -201,7 +206,7 @@
                     <input type="color" id="bg-color" value="#0d8c22">
                 </div>
                 <div class="form-group">
-                    <label for="crest-bg-color">Crest Enveloping Background</label>
+                    <label for="crest-bg-color">Crest Background Color</label>
                     <input type="color" id="crest-bg-color" value="#1e293b">
                 </div>
             </div>
@@ -229,10 +234,12 @@
 
         let clubLogoImg = new Image();
         let opponentLogoImg = new Image();
+        let compLogoImg = new Image();
         let posterBackgroundImg = new Image();
         
         clubLogoImg.crossOrigin = "anonymous";
         opponentLogoImg.crossOrigin = "anonymous";
+        compLogoImg.crossOrigin = "anonymous";
         posterBackgroundImg.crossOrigin = "anonymous";
         
         clubLogoImg.src = 'WaunG.png';
@@ -240,6 +247,7 @@
         clubLogoImg.onload = () => updateCanvasPreview();
         posterBackgroundImg.onload = () => updateCanvasPreview();
         opponentLogoImg.onload = () => updateCanvasPreview();
+        compLogoImg.onload = () => updateCanvasPreview();
         opponentLogoImg.onerror = () => { updateCanvasPreview(); };
 
         window.addEventListener('load', () => {
@@ -422,6 +430,17 @@
             }
         }
 
+        function onCompLogoUploaded() {
+            const fileInput = document.getElementById('comp-logo-uploader');
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    compLogoImg.src = e.target.result;
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+        }
+
         function resolveOpponentImagePipeline() {
             const manualImageDropdown = document.getElementById('manual-opponent-logo-select');
             const currentTeamName = document.getElementById('team-input').value;
@@ -483,56 +502,35 @@
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Layer 2: Top Header Branding Elements
-            ctx.textAlign = "center";
-            ctx.textBaseline = "top";
-            
-            ctx.fillStyle = textColor;
-            ctx.font = "bold 34px system-ui, sans-serif";
-            ctx.letterSpacing = "8px";
-            ctx.fillText(comp || "MATCHDAY PREVIEW", canvas.width / 2, 75);
+            // Layer 2: Optional Competition Logo (Top Right)
+            if (compLogoImg.src && compLogoImg.complete && compLogoImg.naturalWidth !== 0) {
+                ctx.drawImage(compLogoImg, canvas.width - 180, 50, 120, 120);
+            }
 
-            ctx.fillStyle = brandingColor;
-            ctx.font = "900 28px system-ui, sans-serif";
-            ctx.letterSpacing = "6px";
-            ctx.fillText(squad || "FIRST TEAM", canvas.width / 2, 125);
-            ctx.letterSpacing = "0px"; 
+            // Layer 3: Left-Aligned Club Crests (Home First)
+            const crestDimension = 210;
+            const homeCrestX = 180;
+            const awayCrestX = 420;
+            const logoY = 220;
 
-            // Layer 3: Enveloped Dual Club Crest Setup (Home Team First)
-            const logoY = 250;
-            const crestDimension = 260;
-            const homeCrestX = canvas.width * 0.26;
-            const awayCrestX = canvas.width * 0.74;
-
-            // 3A. Draw Amendable Single Background Backplate Envelopes
+            // Enveloping Backgrounds
             ctx.fillStyle = crestBgColor;
             ctx.beginPath();
-            ctx.arc(homeCrestX, logoY + (crestDimension/2), (crestDimension/2) + 16, 0, Math.PI * 2);
-            ctx.arc(awayCrestX, logoY + (crestDimension/2), (crestDimension/2) + 16, 0, Math.PI * 2);
+            ctx.arc(homeCrestX, logoY + (crestDimension/2), (crestDimension/2) + 12, 0, Math.PI * 2);
+            ctx.arc(awayCrestX, logoY + (crestDimension/2), (crestDimension/2) + 12, 0, Math.PI * 2);
             ctx.fill();
 
-            // 3B. Render Home Crest (Waun Galaxy) on Left
+            // Home Crest (Waun Galaxy - Left)
             try {
                 ctx.drawImage(clubLogoImg, homeCrestX - (crestDimension/2), logoY, crestDimension, crestDimension);
             } catch(e) {
                 ctx.fillStyle = textColor;
-                ctx.font = "bold 28px sans-serif";
+                ctx.font = "bold 20px sans-serif";
+                ctx.textAlign = "center";
                 ctx.fillText("WAUN GALAXY", homeCrestX, logoY + (crestDimension/2));
             }
 
-            // VS Central Badge
-            ctx.fillStyle = brandingColor;
-            ctx.beginPath();
-            ctx.arc(canvas.width / 2, logoY + (crestDimension/2), 55, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "italic bold 40px system-ui, sans-serif";
-            ctx.textBaseline = "middle";
-            ctx.fillText("VS", canvas.width / 2, logoY + (crestDimension/2));
-            ctx.textBaseline = "top";
-
-            // 3C. Render Away Crest (Opponent) on Right
+            // Away Crest (Opponent - Right)
             const hasValidSrc = opponentLogoImg.getAttribute('src') !== null && opponentLogoImg.src !== "";
             if (hasValidSrc && opponentLogoImg.complete && opponentLogoImg.naturalWidth !== 0) {
                 ctx.drawImage(opponentLogoImg, awayCrestX - (crestDimension/2), logoY, crestDimension, crestDimension);
@@ -542,47 +540,78 @@
                 ctx.arc(awayCrestX, logoY + (crestDimension/2), crestDimension/2, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = "#64748b";
-                ctx.font = "bold 24px sans-serif";
-                ctx.fillText("NO CREST", awayCrestX, logoY + (crestDimension/2) - 10);
+                ctx.font = "bold 20px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("NO CREST", awayCrestX, logoY + (crestDimension/2));
             }
 
-            // Layer 4: Big Bold Opponent Team Display
-            const textCenterBaseY = 590;
+            // VS Circle Indicator Between Logos
+            const vsX = (homeCrestX + awayCrestX) / 2;
+            ctx.fillStyle = brandingColor;
+            ctx.beginPath();
+            ctx.arc(vsX, logoY + (crestDimension/2), 35, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "italic bold 26px system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("VS", vsX, logoY + (crestDimension/2));
+
+            // Layer 4: Match Title / Opponent Display
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            
+            ctx.fillStyle = brandingColor;
+            ctx.font = "900 24px system-ui, sans-serif";
+            ctx.letterSpacing = "4px";
+            ctx.fillText("WAUN GALAXY HOME FIXTURE", 60, 80);
+
             ctx.fillStyle = textColor;
-            ctx.font = "black italic 900 92px system-ui, sans-serif";
-            ctx.fillText(team || "OPPONENT CLUB", canvas.width / 2, textCenterBaseY);
+            ctx.font = "black italic 900 68px system-ui, sans-serif";
+            ctx.letterSpacing = "0px";
+            ctx.fillText(`VS ${team || "OPPONENT"}`, 60, 480);
 
-            // Layer 5: Unified Match Details Panel Grouping
-            const panelX = 100;
-            const panelY = 740;
-            const panelWidth = 800;
-            const panelHeight = 180;
+            // Layer 5: Bottom Information Details Panel
+            const panelX = 60;
+            const panelY = 620;
+            const panelWidth = 880;
+            const panelHeight = 310;
 
-            ctx.fillStyle = "rgba(15, 23, 42, 0.65)";
+            ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
             ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.roundRect(panelX, panelY, panelWidth, panelHeight, 12);
+            ctx.roundRect(panelX, panelY, panelWidth, panelHeight, 16);
             ctx.fill();
             ctx.stroke();
 
-            // Centered Stacked Metrics inside the Details Container Box
+            // Information Rows inside Bottom Box
             ctx.textAlign = "center";
             
-            // Date String
-            ctx.fillStyle = "#f59e0b"; 
-            ctx.font = "bold 34px system-ui, sans-serif";
-            ctx.fillText(date || "DATE PENDING", canvas.width / 2, panelY + 25);
-
-            // Kick-off Time formatted strictly in HH:MM
+            // Competition & Squad Classification
             ctx.fillStyle = textColor;
-            ctx.font = "800 32px system-ui, sans-serif";
-            ctx.fillText(formattedTime ? `KICK-OFF — ${formattedTime}` : "KICK-OFF TIME PENDING", canvas.width / 2, panelY + 75);
+            ctx.font = "bold 32px system-ui, sans-serif";
+            ctx.fillText(comp || "MATCHDAY PREVIEW", canvas.width / 2, panelY + 35);
 
-            // Venue Location
+            ctx.fillStyle = brandingColor;
+            ctx.font = "900 24px system-ui, sans-serif";
+            ctx.fillText(squad || "FIRST TEAM", canvas.width / 2, panelY + 80);
+
+            // Match Date
+            ctx.fillStyle = "#f59e0b";
+            ctx.font = "bold 32px system-ui, sans-serif";
+            ctx.fillText(date || "DATE PENDING", canvas.width / 2, panelY + 135);
+
+            // Kick-off Time formatted in HH:MM
+            ctx.fillStyle = textColor;
+            ctx.font = "800 30px system-ui, sans-serif";
+            ctx.fillText(formattedTime ? `KICK-OFF — ${formattedTime}` : "KICK-OFF TIME PENDING", canvas.width / 2, panelY + 185);
+
+            // Venue Input Display
             ctx.fillStyle = "#94a3b8";
-            ctx.font = "600 28px system-ui, sans-serif";
-            ctx.fillText(venue || "VENUE DATA UNSET", canvas.width / 2, panelY + 125);
+            ctx.font = "600 26px system-ui, sans-serif";
+            ctx.fillText(venue ? `VENUE: ${venue}` : "VENUE DATA UNSET", canvas.width / 2, panelY + 235);
         }
     </script>
 </body>
