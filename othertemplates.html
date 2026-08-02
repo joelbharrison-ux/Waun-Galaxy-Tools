@@ -97,6 +97,10 @@
             box-sizing: border-box;
             font-size: 0.95rem;
         }
+        input[type="range"] {
+            padding: 0;
+            cursor: pointer;
+        }
         input:focus, select:focus {
             outline: none;
             border-color: #0d8c22;
@@ -207,6 +211,12 @@
                 </div>
             </div>
 
+            <!-- Background Image Opacity Slider -->
+            <div class="form-group">
+                <label for="bg-opacity-slider">Background Image Opacity (<span id="opacity-val">100%</span>)</label>
+                <input type="range" id="bg-opacity-slider" min="0" max="1" step="0.05" value="1" oninput="onOpacityChange(this.value)">
+            </div>
+
             <hr>
 
             <!-- Sponsor Logos Uploaders -->
@@ -253,22 +263,22 @@
             <div class="row-grid">
                 <div class="form-group">
                     <label for="home-crest-bg-color">Top Logo Background Color</label>
-                    <input type="color" id="home-crest-bg-color" value="#0d8c22">
+                    <input type="color" id="home-crest-bg-color" value="#ffffff" oninput="updateCanvasPreview()">
                 </div>
                 <div class="form-group">
                     <label for="away-crest-bg-color">Bottom Logo Background Color</label>
-                    <input type="color" id="away-crest-bg-color" value="#1e293b">
+                    <input type="color" id="away-crest-bg-color" value="#ffffff" oninput="updateCanvasPreview()">
                 </div>
             </div>
 
             <div class="row-grid" style="margin-top: 12px;">
                 <div class="form-group">
                     <label for="bg-color">Graphic Accent Branding Theme</label>
-                    <input type="color" id="bg-color" value="#0d8c22">
+                    <input type="color" id="bg-color" value="#0d8c22" oninput="updateCanvasPreview()">
                 </div>
                 <div class="form-group">
                     <label for="text-color">Typography Color Tint</label>
-                    <input type="color" id="text-color" value="#ffffff">
+                    <input type="color" id="text-color" value="#ffffff" oninput="updateCanvasPreview()">
                 </div>
             </div>
         </div>
@@ -330,10 +340,16 @@
             });
         }
 
+        function onOpacityChange(val) {
+            document.getElementById('opacity-val').textContent = `${Math.round(val * 100)}%`;
+            updateCanvasPreview();
+        }
+
         function getCurrentState() {
             return {
                 homeAway: document.getElementById('home-away-select').value,
                 opponentLogoSelect: document.getElementById('manual-opponent-logo-select').value,
+                bgOpacity: document.getElementById('bg-opacity-slider').value,
                 compInput: document.getElementById('comp-input').value,
                 squadInput: document.getElementById('squad-input').value,
                 teamInput: document.getElementById('team-input').value,
@@ -351,6 +367,8 @@
             isUndoRedoOperation = true;
             document.getElementById('home-away-select').value = state.homeAway;
             document.getElementById('manual-opponent-logo-select').value = state.opponentLogoSelect;
+            document.getElementById('bg-opacity-slider').value = state.bgOpacity;
+            document.getElementById('opacity-val').textContent = `${Math.round(state.bgOpacity * 100)}%`;
             document.getElementById('comp-input').value = state.compInput;
             document.getElementById('squad-input').value = state.squadInput;
             document.getElementById('team-input').value = state.teamInput;
@@ -665,19 +683,23 @@
             const homeCrestBg = document.getElementById('home-crest-bg-color').value;
             const awayCrestBg = document.getElementById('away-crest-bg-color').value;
             const textColor = document.getElementById('text-color').value;
+            const bgOpacity = parseFloat(document.getElementById('bg-opacity-slider').value);
             const isHome = document.getElementById('home-away-select').value === "HOME";
 
-            const leftStripWidth = 240; // Thinner left strip
-            const bottomStripHeight = 110; // Horizontal bottom sponsor strip height
+            const leftStripWidth = 240; 
+            const bottomStripHeight = 220; // Doubled height of sponsor strip
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Layer 1: Background Image Centered in Remaining Viewport Area
+            // Layer 1: Background Image Centered in Viewport Area (with Opacity Control)
             const activeViewWidth = canvas.width - leftStripWidth;
             const activeViewHeight = canvas.height - bottomStripHeight;
 
+            // Base Background Fill
+            ctx.fillStyle = "#0c111d";
+            ctx.fillRect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
+
             if (posterBackgroundImg.src && posterBackgroundImg.complete && posterBackgroundImg.naturalWidth !== 0) {
-                // Calculate cover dimensions centering in remaining area
                 const imgRatio = posterBackgroundImg.naturalWidth / posterBackgroundImg.naturalHeight;
                 const viewRatio = activeViewWidth / activeViewHeight;
                 let drawW, drawH, drawX, drawY;
@@ -694,11 +716,12 @@
                     drawY = (activeViewHeight - drawH) / 2;
                 }
 
+                ctx.save();
+                ctx.globalAlpha = bgOpacity;
                 ctx.drawImage(posterBackgroundImg, drawX, drawY, drawW, drawH);
+                ctx.restore();
+
                 ctx.fillStyle = "rgba(10, 15, 30, 0.85)"; 
-                ctx.fillRect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
-            } else {
-                ctx.fillStyle = "#0c111d";
                 ctx.fillRect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
             }
 
@@ -721,25 +744,25 @@
             ctx.fillStyle = brandingColor;
             ctx.fillRect(leftStripWidth - 5, 0, 5, canvas.height - bottomStripHeight);
 
-            // Layer 3: Bottom Horizontal White Sponsor Strip
+            // Layer 3: Bottom Horizontal White Sponsor Strip (Border between strips removed)
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, canvas.height - bottomStripHeight, canvas.width, bottomStripHeight);
             
-            // Top Accent Line on Bottom Sponsor Strip
+            // Top Accent Line on Bottom Sponsor Strip (Only spans the right-hand active area)
             ctx.fillStyle = brandingColor;
-            ctx.fillRect(0, canvas.height - bottomStripHeight, canvas.width, 5);
+            ctx.fillRect(leftStripWidth, canvas.height - bottomStripHeight, activeViewWidth, 5);
 
             // Render Selected Sponsor Logos (Centrally Aligned)
             const activeSponsors = sponsorImgs.filter(img => img.src && img.complete && img.naturalWidth !== 0);
             if (activeSponsors.length > 0) {
                 const sponsorCount = activeSponsors.length;
                 const slotWidth = canvas.width / sponsorCount;
-                const maxSponsorH = 70;
-                const maxSponsorW = slotWidth * 0.7;
+                const maxSponsorH = 140;
+                const maxSponsorW = slotWidth * 0.75;
 
                 activeSponsors.forEach((img, idx) => {
                     const centerX = (slotWidth * idx) + (slotWidth / 2);
-                    const centerY = canvas.height - (bottomStripHeight / 2) + 2;
+                    const centerY = canvas.height - (bottomStripHeight / 2);
 
                     let renderW = img.naturalWidth;
                     let renderH = img.naturalHeight;
@@ -751,7 +774,7 @@
                 });
             } else {
                 ctx.fillStyle = "#94a3b8";
-                ctx.font = "bold 16px system-ui, sans-serif";
+                ctx.font = "bold 18px system-ui, sans-serif";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
                 ctx.fillText("OFFICIAL CLUB SPONSORS", canvas.width / 2, canvas.height - (bottomStripHeight / 2));
@@ -765,8 +788,8 @@
             // Layer 5: Left-Side Vertical Stacked Club Logos
             const crestDimension = 150;
             const centerX = leftStripWidth / 2;
-            const topY = 190;
-            const bottomY = 530;
+            const topY = 170;
+            const bottomY = 490;
 
             const waunLogoData = {
                 img: clubLogoImg,
@@ -813,8 +836,8 @@
             ctx.letterSpacing = "0px";
             ctx.fillText(`${squadText} VS ${opponentText}`, rightAreaX, 95);
 
-            // Layer 7: Match Details (Moved down as close to the bottom strip as possible)
-            const panelY = 480;
+            // Layer 7: Match Details (Adjusted positioning above bottom sponsor panel)
+            const panelY = 420;
 
             ctx.fillStyle = brandingColor;
             ctx.font = "900 32px system-ui, sans-serif";
