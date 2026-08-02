@@ -110,6 +110,11 @@
             grid-template-columns: 1fr 1fr;
             gap: 12px;
         }
+        .triple-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
         .history-controls {
             display: flex;
             gap: 10px;
@@ -204,6 +209,14 @@
 
             <hr>
 
+            <!-- Sponsor Logos Uploaders -->
+            <label>Sponsor Logos (Up to 3 - Centered Automatically)</label>
+            <div class="triple-grid" style="margin-bottom: 16px;">
+                <input type="file" id="sponsor1-uploader" accept="image/*" onchange="onSponsorUploaded(0)">
+                <input type="file" id="sponsor2-uploader" accept="image/*" onchange="onSponsorUploaded(1)">
+                <input type="file" id="sponsor3-uploader" accept="image/*" onchange="onSponsorUploaded(2)">
+            </div>
+
             <div class="row-grid">
                 <div class="form-group">
                     <label for="comp-input">Competition / League</label>
@@ -279,11 +292,13 @@
         let opponentLogoImg = new Image();
         let compLogoImg = new Image();
         let posterBackgroundImg = new Image();
+        let sponsorImgs = [new Image(), new Image(), new Image()];
         
         clubLogoImg.crossOrigin = "anonymous";
         opponentLogoImg.crossOrigin = "anonymous";
         compLogoImg.crossOrigin = "anonymous";
         posterBackgroundImg.crossOrigin = "anonymous";
+        sponsorImgs.forEach(img => img.crossOrigin = "anonymous");
         
         clubLogoImg.src = 'WaunG.png';
         
@@ -291,6 +306,7 @@
         posterBackgroundImg.onload = () => updateCanvasPreview();
         opponentLogoImg.onload = () => updateCanvasPreview();
         compLogoImg.onload = () => updateCanvasPreview();
+        sponsorImgs.forEach(img => img.onload = () => updateCanvasPreview());
         opponentLogoImg.onerror = () => { updateCanvasPreview(); };
 
         // Undo/Redo State History System
@@ -577,6 +593,18 @@
             }
         }
 
+        function onSponsorUploaded(index) {
+            const fileInput = document.getElementById(`sponsor${index+1}-uploader`);
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    sponsorImgs[index].src = e.target.result;
+                    saveState();
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+        }
+
         function resolveOpponentImagePipeline() {
             const manualImageDropdown = document.getElementById('manual-opponent-logo-select');
             const currentTeamName = document.getElementById('team-input').value;
@@ -599,13 +627,11 @@
         function onManualTeamTextInput() { resolveOpponentImagePipeline(); updateCanvasPreview(); }
 
         function drawCrestWithLabel(imgObj, fallbackText, labelText, centerX, centerY, crestDimension, crestBgColor) {
-            // Draw background circle envelope with individual color
             ctx.fillStyle = crestBgColor;
             ctx.beginPath();
-            ctx.arc(centerX, centerY, (crestDimension / 2) + 8, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY, (crestDimension / 2) + 6, 0, Math.PI * 2);
             ctx.fill();
 
-            // Draw image or fallback text
             const hasValidSrc = imgObj && imgObj.getAttribute('src') !== null && imgObj.src !== "";
             if (hasValidSrc && imgObj.complete && imgObj.naturalWidth !== 0) {
                 ctx.drawImage(imgObj, centerX - (crestDimension / 2), centerY - (crestDimension / 2), crestDimension, crestDimension);
@@ -615,18 +641,17 @@
                 ctx.arc(centerX, centerY, crestDimension / 2, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = "#334155";
-                ctx.font = "bold 18px system-ui, sans-serif";
+                ctx.font = "bold 14px system-ui, sans-serif";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
                 ctx.fillText(fallbackText, centerX, centerY);
             }
 
-            // Draw Team Name below logo in dark contrast text for white strip
             ctx.fillStyle = "#0f172a";
-            ctx.font = "bold 20px system-ui, sans-serif";
+            ctx.font = "bold 16px system-ui, sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "top";
-            ctx.fillText(labelText, centerX, centerY + (crestDimension / 2) + 14);
+            ctx.fillText(labelText, centerX, centerY + (crestDimension / 2) + 10);
         }
 
         function updateCanvasPreview() {
@@ -642,49 +667,106 @@
             const textColor = document.getElementById('text-color').value;
             const isHome = document.getElementById('home-away-select').value === "HOME";
 
+            const leftStripWidth = 240; // Thinner left strip
+            const bottomStripHeight = 110; // Horizontal bottom sponsor strip height
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Layer 1: Canvas Background Setup
+            // Layer 1: Background Image Centered in Remaining Viewport Area
+            const activeViewWidth = canvas.width - leftStripWidth;
+            const activeViewHeight = canvas.height - bottomStripHeight;
+
             if (posterBackgroundImg.src && posterBackgroundImg.complete && posterBackgroundImg.naturalWidth !== 0) {
-                ctx.drawImage(posterBackgroundImg, 0, 0, canvas.width, canvas.height);
+                // Calculate cover dimensions centering in remaining area
+                const imgRatio = posterBackgroundImg.naturalWidth / posterBackgroundImg.naturalHeight;
+                const viewRatio = activeViewWidth / activeViewHeight;
+                let drawW, drawH, drawX, drawY;
+
+                if (imgRatio > viewRatio) {
+                    drawH = activeViewHeight;
+                    drawW = activeViewHeight * imgRatio;
+                    drawX = leftStripWidth + (activeViewWidth - drawW) / 2;
+                    drawY = 0;
+                } else {
+                    drawW = activeViewWidth;
+                    drawH = activeViewWidth / imgRatio;
+                    drawX = leftStripWidth;
+                    drawY = (activeViewHeight - drawH) / 2;
+                }
+
+                ctx.drawImage(posterBackgroundImg, drawX, drawY, drawW, drawH);
                 ctx.fillStyle = "rgba(10, 15, 30, 0.85)"; 
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillRect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
             } else {
                 ctx.fillStyle = "#0c111d";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillRect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
             }
 
-            // Outer Framing Top/Bottom Bars
+            // Outer Top Framing Accent Bar
             ctx.fillStyle = brandingColor;
-            ctx.fillRect(0, 0, canvas.width, 24);
-            ctx.fillRect(0, canvas.height - 24, canvas.width, 24);
+            ctx.fillRect(leftStripWidth, 0, activeViewWidth, 16);
 
-            let gradient = ctx.createLinearGradient(0, 150, 0, canvas.height);
-            gradient.addColorStop(0, "rgba(12, 17, 29, 0)");
-            gradient.addColorStop(0.5, "rgba(13, 140, 34, 0.2)");
+            // Gradient Overlay for Active Viewport
+            let gradient = ctx.createLinearGradient(leftStripWidth, 0, canvas.width, activeViewHeight);
+            gradient.addColorStop(0, "rgba(12, 17, 29, 0.2)");
             gradient.addColorStop(1, "rgba(12, 17, 29, 0.98)");
             ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
 
             // Layer 2: Left Side White Panel Overlay
-            const leftStripWidth = 320;
             ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, leftStripWidth, canvas.height);
+            ctx.fillRect(0, 0, leftStripWidth, canvas.height - bottomStripHeight);
 
-            // Subtle Right Border Accent on the Left Strip
+            // Subtle Right Border Accent on Left Strip
             ctx.fillStyle = brandingColor;
-            ctx.fillRect(leftStripWidth - 6, 0, 6, canvas.height);
+            ctx.fillRect(leftStripWidth - 5, 0, 5, canvas.height - bottomStripHeight);
 
-            // Layer 3: Optional Competition Logo (Top Right)
-            if (compLogoImg.src && compLogoImg.complete && compLogoImg.naturalWidth !== 0) {
-                ctx.drawImage(compLogoImg, canvas.width - 170, 45, 110, 110);
+            // Layer 3: Bottom Horizontal White Sponsor Strip
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, canvas.height - bottomStripHeight, canvas.width, bottomStripHeight);
+            
+            // Top Accent Line on Bottom Sponsor Strip
+            ctx.fillStyle = brandingColor;
+            ctx.fillRect(0, canvas.height - bottomStripHeight, canvas.width, 5);
+
+            // Render Selected Sponsor Logos (Centrally Aligned)
+            const activeSponsors = sponsorImgs.filter(img => img.src && img.complete && img.naturalWidth !== 0);
+            if (activeSponsors.length > 0) {
+                const sponsorCount = activeSponsors.length;
+                const slotWidth = canvas.width / sponsorCount;
+                const maxSponsorH = 70;
+                const maxSponsorW = slotWidth * 0.7;
+
+                activeSponsors.forEach((img, idx) => {
+                    const centerX = (slotWidth * idx) + (slotWidth / 2);
+                    const centerY = canvas.height - (bottomStripHeight / 2) + 2;
+
+                    let renderW = img.naturalWidth;
+                    let renderH = img.naturalHeight;
+                    const scale = Math.min(maxSponsorW / renderW, maxSponsorH / renderH);
+                    renderW *= scale;
+                    renderH *= scale;
+
+                    ctx.drawImage(img, centerX - (renderW / 2), centerY - (renderH / 2), renderW, renderH);
+                });
+            } else {
+                ctx.fillStyle = "#94a3b8";
+                ctx.font = "bold 16px system-ui, sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("OFFICIAL CLUB SPONSORS", canvas.width / 2, canvas.height - (bottomStripHeight / 2));
             }
 
-            // Layer 4: Left-Side Vertical Stacked Club Logos
-            const crestDimension = 180;
+            // Layer 4: Optional Competition Logo (Top Right)
+            if (compLogoImg.src && compLogoImg.complete && compLogoImg.naturalWidth !== 0) {
+                ctx.drawImage(compLogoImg, canvas.width - 150, 35, 100, 100);
+            }
+
+            // Layer 5: Left-Side Vertical Stacked Club Logos
+            const crestDimension = 150;
             const centerX = leftStripWidth / 2;
-            const topY = 220;
-            const bottomY = 560;
+            const topY = 190;
+            const bottomY = 530;
 
             const waunLogoData = {
                 img: clubLogoImg,
@@ -700,69 +782,55 @@
             const topTeam = isHome ? waunLogoData : oppLogoData;
             const bottomTeam = isHome ? oppLogoData : waunLogoData;
 
-            // Render Top Crest with custom background tint
+            // Draw Logos & Labels
             drawCrestWithLabel(topTeam.img, topTeam.fallback, topTeam.label, centerX, topY, crestDimension, homeCrestBg);
 
-            // Render Floating VS Text (Clean with no circles or background overlaps)
-            const vsY = (topY + bottomY) / 2 + 10;
+            const vsY = (topY + bottomY) / 2 + 5;
             ctx.fillStyle = "#0f172a";
-            ctx.font = "black italic 900 36px system-ui, sans-serif";
+            ctx.font = "black italic 900 32px system-ui, sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText("VS", centerX, vsY);
 
-            // Render Bottom Crest with custom background tint
             drawCrestWithLabel(bottomTeam.img, bottomTeam.fallback, bottomTeam.label, centerX, bottomY, crestDimension, awayCrestBg);
 
-            // Layer 5: Main Content Display Area (Right Side)
-            const rightAreaX = leftStripWidth + 60;
+            // Layer 6: Main Content Area (Top Right Merged Squad & Opponent Name)
+            const rightAreaX = leftStripWidth + 45;
 
             ctx.textAlign = "left";
             ctx.textBaseline = "top";
             
-            // Sub-header title
             ctx.fillStyle = brandingColor;
-            ctx.font = "900 24px system-ui, sans-serif";
+            ctx.font = "900 22px system-ui, sans-serif";
             ctx.letterSpacing = "4px";
-            ctx.fillText("UPCOMING FIXTURE", rightAreaX, 80);
+            ctx.fillText("UPCOMING FIXTURE", rightAreaX, 55);
 
-            // Main Fixture Header Text
+            // Merged Squad Unit Classification & Opponent Title
+            const squadText = squad || "FIRST TEAM";
+            const opponentText = team || "ROCKSPUR";
             ctx.fillStyle = textColor;
-            ctx.font = "black italic 900 64px system-ui, sans-serif";
+            ctx.font = "black italic 900 48px system-ui, sans-serif";
             ctx.letterSpacing = "0px";
-            ctx.fillText(isHome ? "HOME MATCH" : "AWAY MATCH", rightAreaX, 130);
+            ctx.fillText(`${squadText} VS ${opponentText}`, rightAreaX, 95);
 
-            // Opponent Name Display
+            // Layer 7: Match Details (Moved down as close to the bottom strip as possible)
+            const panelY = 480;
+
             ctx.fillStyle = brandingColor;
-            ctx.font = "bold 38px system-ui, sans-serif";
-            ctx.fillText(`VS ${team || "OPPONENT"}`, rightAreaX, 220);
-
-            // Layer 6: Match Details Section (Right Side Bottom Grouping)
-            const panelY = 500;
-
-            // Competition Title & Squad Unit
-            ctx.fillStyle = textColor;
-            ctx.font = "bold 38px system-ui, sans-serif";
+            ctx.font = "900 32px system-ui, sans-serif";
             ctx.fillText(comp || "MATCHDAY PREVIEW", rightAreaX, panelY);
 
-            ctx.fillStyle = brandingColor;
-            ctx.font = "900 28px system-ui, sans-serif";
-            ctx.fillText(squad || "FIRST TEAM", rightAreaX, panelY + 55);
-
-            // Match Date
             ctx.fillStyle = textColor;
-            ctx.font = "bold 32px system-ui, sans-serif";
-            ctx.fillText(date || "DATE PENDING", rightAreaX, panelY + 120);
+            ctx.font = "bold 34px system-ui, sans-serif";
+            ctx.fillText(date || "DATE PENDING", rightAreaX, panelY + 65);
 
-            // Kick-Off Time (HH:MM)
             ctx.fillStyle = textColor;
             ctx.font = "800 30px system-ui, sans-serif";
-            ctx.fillText(formattedTime ? `KICK-OFF — ${formattedTime}` : "KICK-OFF TIME PENDING", rightAreaX, panelY + 175);
+            ctx.fillText(formattedTime ? `KICK-OFF — ${formattedTime}` : "KICK-OFF TIME PENDING", rightAreaX, panelY + 130);
 
-            // Venue Textbox Display
             ctx.fillStyle = "#94a3b8";
             ctx.font = "600 26px system-ui, sans-serif";
-            ctx.fillText(venue ? `VENUE: ${venue}` : "VENUE DATA UNSET", rightAreaX, panelY + 230);
+            ctx.fillText(venue ? `VENUE: ${venue}` : "VENUE DATA UNSET", rightAreaX, panelY + 190);
         }
     </script>
 </body>
