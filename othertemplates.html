@@ -810,7 +810,7 @@
 
             const vsY = (topY + bottomY) / 2 + 5;
             ctx.fillStyle = "#0f172a";
-            ctx.font = "black italic 900 32px system-ui, sans-serif";
+            ctx.font = "black italic 900 48px system-ui, sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText("VS", centerX, vsY);
@@ -824,20 +824,20 @@
             ctx.textBaseline = "top";
             
             ctx.fillStyle = brandingColor;
-            ctx.font = "900 22px system-ui, sans-serif";
+            ctx.font = "900 30px system-ui, sans-serif";
             ctx.letterSpacing = "4px";
             ctx.fillText("UPCOMING FIXTURE", rightAreaX, 55);
 
             // Merged Squad Unit Classification & Opponent Title
             const squadText = squad || "FIRST TEAM";
-            const opponentText = team || "ROCKSPUR";
+            const opponentText = team || "OPPONENTS";
             ctx.fillStyle = textColor;
             ctx.font = "black italic 900 48px system-ui, sans-serif";
             ctx.letterSpacing = "0px";
             ctx.fillText(`${squadText} VS ${opponentText}`, rightAreaX, 95);
 
             // Layer 7: Match Details (Moved down as low as possible right above the 220px sponsor strip)
-            const panelY = 520; 
+            const panelY = 600; 
 
             ctx.fillStyle = brandingColor;
             ctx.font = "900 30px system-ui, sans-serif";
