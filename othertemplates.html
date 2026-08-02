@@ -211,10 +211,10 @@
                 </div>
             </div>
 
-            <!-- Background Image Opacity Slider -->
+            <!-- Background Image Opacity Slider (Increased default to 0.90) -->
             <div class="form-group">
-                <label for="bg-opacity-slider">Background Image Opacity (<span id="opacity-val">100%</span>)</label>
-                <input type="range" id="bg-opacity-slider" min="0" max="1" step="0.05" value="1" oninput="onOpacityChange(this.value)">
+                <label for="bg-opacity-slider">Background Image Opacity (<span id="opacity-val">90%</span>)</label>
+                <input type="range" id="bg-opacity-slider" min="0" max="1" step="0.05" value="0.9" oninput="onOpacityChange(this.value)">
             </div>
 
             <hr>
@@ -687,7 +687,7 @@
             const isHome = document.getElementById('home-away-select').value === "HOME";
 
             const leftStripWidth = 240; 
-            const bottomStripHeight = 220; // Doubled height of sponsor strip
+            const bottomStripHeight = 220; 
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -721,7 +721,7 @@
                 ctx.drawImage(posterBackgroundImg, drawX, drawY, drawW, drawH);
                 ctx.restore();
 
-                ctx.fillStyle = "rgba(10, 15, 30, 0.85)"; 
+                ctx.fillStyle = "rgba(10, 15, 30, 0.45)"; // Reduced dimming layer to let image opacity show through better
                 ctx.fillRect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
             }
 
@@ -731,8 +731,8 @@
 
             // Gradient Overlay for Active Viewport
             let gradient = ctx.createLinearGradient(leftStripWidth, 0, canvas.width, activeViewHeight);
-            gradient.addColorStop(0, "rgba(12, 17, 29, 0.2)");
-            gradient.addColorStop(1, "rgba(12, 17, 29, 0.98)");
+            gradient.addColorStop(0, "rgba(12, 17, 29, 0.1)");
+            gradient.addColorStop(1, "rgba(12, 17, 29, 0.95)");
             ctx.fillStyle = gradient;
             ctx.fillRect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
 
@@ -744,11 +744,11 @@
             ctx.fillStyle = brandingColor;
             ctx.fillRect(leftStripWidth - 5, 0, 5, canvas.height - bottomStripHeight);
 
-            // Layer 3: Bottom Horizontal White Sponsor Strip (Border between strips removed)
+            // Layer 3: Bottom Horizontal White Sponsor Strip
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, canvas.height - bottomStripHeight, canvas.width, bottomStripHeight);
             
-            // Top Accent Line on Bottom Sponsor Strip (Only spans the right-hand active area)
+            // Top Accent Line on Bottom Sponsor Strip
             ctx.fillStyle = brandingColor;
             ctx.fillRect(leftStripWidth, canvas.height - bottomStripHeight, activeViewWidth, 5);
 
@@ -836,24 +836,24 @@
             ctx.letterSpacing = "0px";
             ctx.fillText(`${squadText} VS ${opponentText}`, rightAreaX, 95);
 
-            // Layer 7: Match Details (Adjusted positioning above bottom sponsor panel)
-            const panelY = 420;
+            // Layer 7: Match Details (Moved down as low as possible right above the 220px sponsor strip)
+            const panelY = 520; 
 
             ctx.fillStyle = brandingColor;
-            ctx.font = "900 32px system-ui, sans-serif";
+            ctx.font = "900 30px system-ui, sans-serif";
             ctx.fillText(comp || "MATCHDAY PREVIEW", rightAreaX, panelY);
 
             ctx.fillStyle = textColor;
-            ctx.font = "bold 34px system-ui, sans-serif";
-            ctx.fillText(date || "DATE PENDING", rightAreaX, panelY + 65);
+            ctx.font = "bold 32px system-ui, sans-serif";
+            ctx.fillText(date || "DATE PENDING", rightAreaX, panelY + 55);
 
             ctx.fillStyle = textColor;
-            ctx.font = "800 30px system-ui, sans-serif";
-            ctx.fillText(formattedTime ? `KICK-OFF — ${formattedTime}` : "KICK-OFF TIME PENDING", rightAreaX, panelY + 130);
+            ctx.font = "800 28px system-ui, sans-serif";
+            ctx.fillText(formattedTime ? `KICK-OFF — ${formattedTime}` : "KICK-OFF TIME PENDING", rightAreaX, panelY + 110);
 
             ctx.fillStyle = "#94a3b8";
-            ctx.font = "600 26px system-ui, sans-serif";
-            ctx.fillText(venue ? `VENUE: ${venue}` : "VENUE DATA UNSET", rightAreaX, panelY + 190);
+            ctx.font = "600 24px system-ui, sans-serif";
+            ctx.fillText(venue ? `VENUE: ${venue}` : "VENUE DATA UNSET", rightAreaX, panelY + 160);
         }
     </script>
 </body>
