@@ -22,13 +22,38 @@
             flex-direction: column;
             align-items: center;
         }
+        .header-bar {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .exit-btn {
+            background-color: var(--bg-secondary);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .exit-btn:hover {
+            background-color: var(--border);
+            border-color: #64748b;
+        }
         .container {
             max-width: 1200px;
             width: 100%;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 24px;
-            margin-top: 20px;
         }
         @media (max-width: 900px) {
             .container { grid-template-columns: 1fr; }
@@ -85,7 +110,7 @@
             grid-template-columns: 1fr 1fr;
             gap: 12px;
         }
-        h1 { margin: 0 0 4px 0; font-size: 1.85rem; text-align: center; font-weight: 800; letter-spacing: -0.025em; }
+        h1 { margin: 0; font-size: 1.85rem; font-weight: 800; letter-spacing: -0.025em; }
         h2 { margin: 0 0 16px 0; font-size: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; font-weight: 600; }
         .badge {
             display: inline-block;
@@ -94,7 +119,6 @@
             font-size: 0.75rem;
             font-weight: 600;
             background-color: #0d8c22;
-            margin-bottom: 16px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
@@ -103,8 +127,13 @@
 </head>
 <body>
 
-    <h1>🌌 Waun Galaxy Pro Media Engine</h1>
-    <div class="badge">Matchday Design Studio</div>
+    <div class="header-bar">
+        <div>
+            <h1>🌌 Waun Galaxy Pro Media Engine</h1>
+            <div class="badge">Matchday Design Studio</div>
+        </div>
+        <a href="dashboard.html" class="exit-btn">← Exit to Dashboard</a>
+    </div>
 
     <div class="container">
         <!-- Control Panel -->
@@ -157,7 +186,7 @@
 
             <div class="row-grid">
                 <div class="form-group">
-                    <label for="time-input">Kick-Off Time</label>
+                    <label for="time-input">Kick-Off Time (HH:MM Format)</label>
                     <input type="text" id="time-input" oninput="updateCanvasPreview()" placeholder="e.g. 14:30">
                 </div>
                 <div class="form-group">
@@ -172,9 +201,14 @@
                     <input type="color" id="bg-color" value="#0d8c22">
                 </div>
                 <div class="form-group">
-                    <label for="text-color">Typography Color Tint</label>
-                    <input type="color" id="text-color" value="#ffffff">
+                    <label for="crest-bg-color">Crest Enveloping Background</label>
+                    <input type="color" id="crest-bg-color" value="#1e293b">
                 </div>
+            </div>
+            
+            <div class="form-group" style="margin-top: 12px;">
+                <label for="text-color">Typography Color Tint</label>
+                <input type="color" id="text-color" value="#ffffff">
             </div>
         </div>
 
@@ -240,6 +274,17 @@
             const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
             return `${daysOfWeek[dateObj.getDay()]} ${day}${getOrdinalSuffix(day)} ${months[dateObj.getMonth()]} ${year}`;
+        }
+
+        function formatHHMM(timeStr) {
+            if (!timeStr) return "";
+            const match = timeStr.match(/(\d{1,2})[:.]?(\d{2})?/);
+            if (match) {
+                let hours = match[1].padStart(2, '0');
+                let minutes = match[2] ? match[2] : '00';
+                return `${hours}:${minutes}`;
+            }
+            return timeStr;
         }
 
         function getRepoMetadata() {
@@ -331,7 +376,7 @@
                         venue: rowVenue,
                         competition: rowComp,
                         team: rowTeam,
-                        time: rowTime
+                        time: formatHHMM(rowTime)
                     });
                 }
             }
@@ -360,7 +405,7 @@
             document.getElementById('venue-input').value = selectedMatch.venue;
             document.getElementById('comp-input').value = selectedMatch.competition;
             document.getElementById('squad-input').value = selectedMatch.team;
-            document.getElementById('time-input').value = selectedMatch.time;
+            document.getElementById('time-input').value = formatHHMM(selectedMatch.time);
             document.getElementById('date-input').value = formatLongDateString(selectedMatch.date);
 
             resolveOpponentImagePipeline();
@@ -399,6 +444,7 @@
         function onManualTeamTextInput() { resolveOpponentImagePipeline(); }
         function setupColorChangeListeners() {
             document.getElementById('bg-color').addEventListener('input', updateCanvasPreview);
+            document.getElementById('crest-bg-color').addEventListener('input', updateCanvasPreview);
             document.getElementById('text-color').addEventListener('input', updateCanvasPreview);
         }
 
@@ -408,8 +454,9 @@
             const date = document.getElementById('date-input').value.toUpperCase();
             const team = document.getElementById('team-input').value.toUpperCase();
             const venue = document.getElementById('venue-input').value.toUpperCase();
-            const time = document.getElementById('time-input').value;
+            const formattedTime = formatHHMM(document.getElementById('time-input').value);
             const brandingColor = document.getElementById('bg-color').value;
+            const crestBgColor = document.getElementById('crest-bg-color').value;
             const textColor = document.getElementById('text-color').value;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -451,18 +498,29 @@
             ctx.fillText(squad || "FIRST TEAM", canvas.width / 2, 125);
             ctx.letterSpacing = "0px"; 
 
-            // Layer 3: Main Club Crest Setup
+            // Layer 3: Enveloped Dual Club Crest Setup (Home Team First)
             const logoY = 250;
             const crestDimension = 260;
+            const homeCrestX = canvas.width * 0.26;
+            const awayCrestX = canvas.width * 0.74;
 
+            // 3A. Draw Amendable Single Background Backplate Envelopes
+            ctx.fillStyle = crestBgColor;
+            ctx.beginPath();
+            ctx.arc(homeCrestX, logoY + (crestDimension/2), (crestDimension/2) + 16, 0, Math.PI * 2);
+            ctx.arc(awayCrestX, logoY + (crestDimension/2), (crestDimension/2) + 16, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 3B. Render Home Crest (Waun Galaxy) on Left
             try {
-                ctx.drawImage(clubLogoImg, (canvas.width * 0.26) - (crestDimension/2), logoY, crestDimension, crestDimension);
+                ctx.drawImage(clubLogoImg, homeCrestX - (crestDimension/2), logoY, crestDimension, crestDimension);
             } catch(e) {
                 ctx.fillStyle = textColor;
                 ctx.font = "bold 28px sans-serif";
-                ctx.fillText("WAUN GALAXY", canvas.width * 0.26, logoY + (crestDimension/2));
+                ctx.fillText("WAUN GALAXY", homeCrestX, logoY + (crestDimension/2));
             }
 
+            // VS Central Badge
             ctx.fillStyle = brandingColor;
             ctx.beginPath();
             ctx.arc(canvas.width / 2, logoY + (crestDimension/2), 55, 0, Math.PI * 2);
@@ -474,17 +532,18 @@
             ctx.fillText("VS", canvas.width / 2, logoY + (crestDimension/2));
             ctx.textBaseline = "top";
 
+            // 3C. Render Away Crest (Opponent) on Right
             const hasValidSrc = opponentLogoImg.getAttribute('src') !== null && opponentLogoImg.src !== "";
             if (hasValidSrc && opponentLogoImg.complete && opponentLogoImg.naturalWidth !== 0) {
-                ctx.drawImage(opponentLogoImg, (canvas.width * 0.74) - (crestDimension/2), logoY, crestDimension, crestDimension);
+                ctx.drawImage(opponentLogoImg, awayCrestX - (crestDimension/2), logoY, crestDimension, crestDimension);
             } else {
                 ctx.fillStyle = "rgba(255, 255, 255, 0.07)";
                 ctx.beginPath();
-                ctx.arc(canvas.width * 0.74, logoY + (crestDimension/2), crestDimension/2, 0, Math.PI * 2);
+                ctx.arc(awayCrestX, logoY + (crestDimension/2), crestDimension/2, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = "#64748b";
                 ctx.font = "bold 24px sans-serif";
-                ctx.fillText("NO CREST", canvas.width * 0.74, logoY + (crestDimension/2) - 10);
+                ctx.fillText("NO CREST", awayCrestX, logoY + (crestDimension/2) - 10);
             }
 
             // Layer 4: Big Bold Opponent Team Display
@@ -511,14 +570,14 @@
             ctx.textAlign = "center";
             
             // Date String
-            ctx.fillStyle = "#f59e0b"; // Golden core layout color highlight accent
+            ctx.fillStyle = "#f59e0b"; 
             ctx.font = "bold 34px system-ui, sans-serif";
             ctx.fillText(date || "DATE PENDING", canvas.width / 2, panelY + 25);
 
-            // Kick-off Time
+            // Kick-off Time formatted strictly in HH:MM
             ctx.fillStyle = textColor;
             ctx.font = "800 32px system-ui, sans-serif";
-            ctx.fillText(time ? `KICK-OFF — ${time}` : "KICK-OFF TIME PENDING", canvas.width / 2, panelY + 75);
+            ctx.fillText(formattedTime ? `KICK-OFF — ${formattedTime}` : "KICK-OFF TIME PENDING", canvas.width / 2, panelY + 75);
 
             // Venue Location
             ctx.fillStyle = "#94a3b8";
