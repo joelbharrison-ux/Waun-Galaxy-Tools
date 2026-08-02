@@ -110,6 +110,29 @@
             grid-template-columns: 1fr 1fr;
             gap: 12px;
         }
+        .history-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .action-btn:hover:not(:disabled) {
+            background-color: var(--border);
+        }
+        .action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
         h1 { margin: 0; font-size: 1.85rem; font-weight: 800; letter-spacing: -0.025em; }
         h2 { margin: 0 0 16px 0; font-size: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; font-weight: 600; }
         .badge {
@@ -139,6 +162,11 @@
         <!-- Control Panel -->
         <div class="panel">
             <h2>Graphic Configuration</h2>
+
+            <div class="history-controls">
+                <button id="undo-btn" class="action-btn" onclick="undoState()" disabled>↩ Undo</button>
+                <button id="redo-btn" class="action-btn" onclick="redoState()" disabled>↪ Redo</button>
+            </div>
             
             <div class="form-group">
                 <label for="fixture-selector">Select Active Fixture Row</label>
@@ -211,18 +239,24 @@
 
             <div class="row-grid">
                 <div class="form-group">
+                    <label for="home-crest-bg-color">Top Logo Background Color</label>
+                    <input type="color" id="home-crest-bg-color" value="#0d8c22">
+                </div>
+                <div class="form-group">
+                    <label for="away-crest-bg-color">Bottom Logo Background Color</label>
+                    <input type="color" id="away-crest-bg-color" value="#1e293b">
+                </div>
+            </div>
+
+            <div class="row-grid" style="margin-top: 12px;">
+                <div class="form-group">
                     <label for="bg-color">Graphic Accent Branding Theme</label>
                     <input type="color" id="bg-color" value="#0d8c22">
                 </div>
                 <div class="form-group">
-                    <label for="crest-bg-color">Crest Background Color</label>
-                    <input type="color" id="crest-bg-color" value="#1e293b">
+                    <label for="text-color">Typography Color Tint</label>
+                    <input type="color" id="text-color" value="#ffffff">
                 </div>
-            </div>
-            
-            <div class="form-group" style="margin-top: 12px;">
-                <label for="text-color">Typography Color Tint</label>
-                <input type="color" id="text-color" value="#ffffff">
             </div>
         </div>
 
@@ -259,11 +293,96 @@
         compLogoImg.onload = () => updateCanvasPreview();
         opponentLogoImg.onerror = () => { updateCanvasPreview(); };
 
+        // Undo/Redo State History System
+        let historyStack = [];
+        let historyIndex = -1;
+        let isUndoRedoOperation = false;
+
         window.addEventListener('load', () => {
             loadFixturesCSVFile();
             scanGitHubMainBranchImages();
-            setupColorChangeListeners();
+            setupChangeListeners();
+            saveState();
         });
+
+        function setupChangeListeners() {
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('change', () => {
+                    if (!isUndoRedoOperation) saveState();
+                });
+            });
+        }
+
+        function getCurrentState() {
+            return {
+                homeAway: document.getElementById('home-away-select').value,
+                opponentLogoSelect: document.getElementById('manual-opponent-logo-select').value,
+                compInput: document.getElementById('comp-input').value,
+                squadInput: document.getElementById('squad-input').value,
+                teamInput: document.getElementById('team-input').value,
+                dateInput: document.getElementById('date-input').value,
+                timeInput: document.getElementById('time-input').value,
+                venueInput: document.getElementById('venue-input').value,
+                homeCrestBg: document.getElementById('home-crest-bg-color').value,
+                awayCrestBg: document.getElementById('away-crest-bg-color').value,
+                bgColor: document.getElementById('bg-color').value,
+                textColor: document.getElementById('text-color').value
+            };
+        }
+
+        function restoreState(state) {
+            isUndoRedoOperation = true;
+            document.getElementById('home-away-select').value = state.homeAway;
+            document.getElementById('manual-opponent-logo-select').value = state.opponentLogoSelect;
+            document.getElementById('comp-input').value = state.compInput;
+            document.getElementById('squad-input').value = state.squadInput;
+            document.getElementById('team-input').value = state.teamInput;
+            document.getElementById('date-input').value = state.dateInput;
+            document.getElementById('time-input').value = state.timeInput;
+            document.getElementById('venue-input').value = state.venueInput;
+            document.getElementById('home-crest-bg-color').value = state.homeCrestBg;
+            document.getElementById('away-crest-bg-color').value = state.awayCrestBg;
+            document.getElementById('bg-color').value = state.bgColor;
+            document.getElementById('text-color').value = state.textColor;
+
+            resolveOpponentImagePipeline();
+            updateCanvasPreview();
+            isUndoRedoOperation = false;
+            updateHistoryButtons();
+        }
+
+        function saveState() {
+            if (isUndoRedoOperation) return;
+            const currentState = getCurrentState();
+            
+            if (historyIndex < historyStack.length - 1) {
+                historyStack = historyStack.slice(0, historyIndex + 1);
+            }
+
+            historyStack.push(currentState);
+            historyIndex = historyStack.length - 1;
+            updateHistoryButtons();
+        }
+
+        function undoState() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                restoreState(historyStack[historyIndex]);
+            }
+        }
+
+        function redoState() {
+            if (historyIndex < historyStack.length - 1) {
+                historyIndex++;
+                restoreState(historyStack[historyIndex]);
+            }
+        }
+
+        function updateHistoryButtons() {
+            document.getElementById('undo-btn').disabled = historyIndex <= 0;
+            document.getElementById('redo-btn').disabled = historyIndex >= historyStack.length - 1;
+        }
 
         function getOrdinalSuffix(day) {
             if (day > 3 && day < 21) return 'th';
@@ -425,13 +544,13 @@
             document.getElementById('time-input').value = formatHHMM(selectedMatch.time);
             document.getElementById('date-input').value = formatLongDateString(selectedMatch.date);
 
-            // Auto-detect home/away if venue includes home keywords
             const venueLower = selectedMatch.venue.toLowerCase();
             if (venueLower.includes('home') || venueLower.includes('waun')) {
                 document.getElementById('home-away-select').value = 'HOME';
             }
 
             resolveOpponentImagePipeline();
+            saveState();
         }
 
         function onBackgroundFileUploaded() {
@@ -440,6 +559,7 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     posterBackgroundImg.src = e.target.result;
+                    saveState();
                 };
                 reader.readAsDataURL(fileInput.files[0]);
             }
@@ -451,6 +571,7 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     compLogoImg.src = e.target.result;
+                    saveState();
                 };
                 reader.readAsDataURL(fileInput.files[0]);
             }
@@ -474,19 +595,14 @@
             updateCanvasPreview();
         }
 
-        function onManualImageChange() { resolveOpponentImagePipeline(); }
-        function onManualTeamTextInput() { resolveOpponentImagePipeline(); }
-        function setupColorChangeListeners() {
-            document.getElementById('bg-color').addEventListener('input', updateCanvasPreview);
-            document.getElementById('crest-bg-color').addEventListener('input', updateCanvasPreview);
-            document.getElementById('text-color').addEventListener('input', updateCanvasPreview);
-        }
+        function onManualImageChange() { resolveOpponentImagePipeline(); saveState(); }
+        function onManualTeamTextInput() { resolveOpponentImagePipeline(); updateCanvasPreview(); }
 
-        function drawCrestWithLabel(imgObj, fallbackText, labelText, centerX, centerY, crestDimension, crestBgColor, textColor) {
-            // Draw background circle envelope
+        function drawCrestWithLabel(imgObj, fallbackText, labelText, centerX, centerY, crestDimension, crestBgColor) {
+            // Draw background circle envelope with individual color
             ctx.fillStyle = crestBgColor;
             ctx.beginPath();
-            ctx.arc(centerX, centerY, (crestDimension / 2) + 10, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY, (crestDimension / 2) + 8, 0, Math.PI * 2);
             ctx.fill();
 
             // Draw image or fallback text
@@ -494,23 +610,23 @@
             if (hasValidSrc && imgObj.complete && imgObj.naturalWidth !== 0) {
                 ctx.drawImage(imgObj, centerX - (crestDimension / 2), centerY - (crestDimension / 2), crestDimension, crestDimension);
             } else {
-                ctx.fillStyle = "rgba(255, 255, 255, 0.07)";
+                ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, crestDimension / 2, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.fillStyle = "#64748b";
-                ctx.font = "bold 20px system-ui, sans-serif";
+                ctx.fillStyle = "#334155";
+                ctx.font = "bold 18px system-ui, sans-serif";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
                 ctx.fillText(fallbackText, centerX, centerY);
             }
 
-            // Draw Team Name below logo
-            ctx.fillStyle = textColor;
-            ctx.font = "bold 24px system-ui, sans-serif";
+            // Draw Team Name below logo in dark contrast text for white strip
+            ctx.fillStyle = "#0f172a";
+            ctx.font = "bold 20px system-ui, sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "top";
-            ctx.fillText(labelText, centerX, centerY + (crestDimension / 2) + 16);
+            ctx.fillText(labelText, centerX, centerY + (crestDimension / 2) + 14);
         }
 
         function updateCanvasPreview() {
@@ -521,7 +637,8 @@
             const venue = document.getElementById('venue-input').value.toUpperCase();
             const formattedTime = formatHHMM(document.getElementById('time-input').value);
             const brandingColor = document.getElementById('bg-color').value;
-            const crestBgColor = document.getElementById('crest-bg-color').value;
+            const homeCrestBg = document.getElementById('home-crest-bg-color').value;
+            const awayCrestBg = document.getElementById('away-crest-bg-color').value;
             const textColor = document.getElementById('text-color').value;
             const isHome = document.getElementById('home-away-select').value === "HOME";
 
@@ -537,7 +654,7 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            // Outer Branding Framing Bars
+            // Outer Framing Top/Bottom Bars
             ctx.fillStyle = brandingColor;
             ctx.fillRect(0, 0, canvas.width, 24);
             ctx.fillRect(0, canvas.height - 24, canvas.width, 24);
@@ -549,25 +666,25 @@
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Layer 2: Optional Competition Logo (Top Right)
+            // Layer 2: Left Side White Panel Overlay
+            const leftStripWidth = 320;
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, leftStripWidth, canvas.height);
+
+            // Subtle Right Border Accent on the Left Strip
+            ctx.fillStyle = brandingColor;
+            ctx.fillRect(leftStripWidth - 6, 0, 6, canvas.height);
+
+            // Layer 3: Optional Competition Logo (Top Right)
             if (compLogoImg.src && compLogoImg.complete && compLogoImg.naturalWidth !== 0) {
                 ctx.drawImage(compLogoImg, canvas.width - 170, 45, 110, 110);
             }
 
-            // Layer 3: Header Titles
-            ctx.textAlign = "left";
-            ctx.textBaseline = "top";
-            
-            ctx.fillStyle = brandingColor;
-            ctx.font = "900 24px system-ui, sans-serif";
-            ctx.letterSpacing = "4px";
-            ctx.fillText("UPCOMING FIXTURE", 60, 50);
-
-            // Layer 4: Vertical Stacked Logos (Home Top / Away Bottom)
-            const crestDimension = 170;
-            const centerX = canvas.width / 2;
-            const topY = 190;
-            const bottomY = 460;
+            // Layer 4: Left-Side Vertical Stacked Club Logos
+            const crestDimension = 180;
+            const centerX = leftStripWidth / 2;
+            const topY = 220;
+            const bottomY = 560;
 
             const waunLogoData = {
                 img: clubLogoImg,
@@ -583,54 +700,69 @@
             const topTeam = isHome ? waunLogoData : oppLogoData;
             const bottomTeam = isHome ? oppLogoData : waunLogoData;
 
-            // Draw Top Logo & Team Name
-            drawCrestWithLabel(topTeam.img, topTeam.fallback, topTeam.label, centerX, topY, crestDimension, crestBgColor, textColor);
+            // Render Top Crest with custom background tint
+            drawCrestWithLabel(topTeam.img, topTeam.fallback, topTeam.label, centerX, topY, crestDimension, homeCrestBg);
 
-            // VS Badge Between Logos
+            // Render Floating VS Text (Clean with no circles or background overlaps)
             const vsY = (topY + bottomY) / 2 + 10;
-            ctx.fillStyle = brandingColor;
-            ctx.beginPath();
-            ctx.arc(centerX, vsY, 30, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "italic bold 22px system-ui, sans-serif";
+            ctx.fillStyle = "#0f172a";
+            ctx.font = "black italic 900 36px system-ui, sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText("VS", centerX, vsY);
 
-            // Draw Bottom Logo & Team Name
-            drawCrestWithLabel(bottomTeam.img, bottomTeam.fallback, bottomTeam.label, centerX, bottomY, crestDimension, crestBgColor, textColor);
+            // Render Bottom Crest with custom background tint
+            drawCrestWithLabel(bottomTeam.img, bottomTeam.fallback, bottomTeam.label, centerX, bottomY, crestDimension, awayCrestBg);
 
-            // Layer 5: Bottom Match Information (No Background Box)
-            const panelY = 660;
+            // Layer 5: Main Content Display Area (Right Side)
+            const rightAreaX = leftStripWidth + 60;
 
-            ctx.textAlign = "center";
+            ctx.textAlign = "left";
             ctx.textBaseline = "top";
-
-            // Competition & Squad Classification
-            ctx.fillStyle = textColor;
-            ctx.font = "bold 32px system-ui, sans-serif";
-            ctx.fillText(comp || "MATCHDAY PREVIEW", canvas.width / 2, panelY);
-
+            
+            // Sub-header title
             ctx.fillStyle = brandingColor;
             ctx.font = "900 24px system-ui, sans-serif";
-            ctx.fillText(squad || "FIRST TEAM", canvas.width / 2, panelY + 45);
+            ctx.letterSpacing = "4px";
+            ctx.fillText("UPCOMING FIXTURE", rightAreaX, 80);
 
-            // Match Date (Color matched to other text)
+            // Main Fixture Header Text
             ctx.fillStyle = textColor;
-            ctx.font = "bold 30px system-ui, sans-serif";
-            ctx.fillText(date || "DATE PENDING", canvas.width / 2, panelY + 95);
+            ctx.font = "black italic 900 64px system-ui, sans-serif";
+            ctx.letterSpacing = "0px";
+            ctx.fillText(isHome ? "HOME MATCH" : "AWAY MATCH", rightAreaX, 130);
 
-            // Kick-off Time
+            // Opponent Name Display
+            ctx.fillStyle = brandingColor;
+            ctx.font = "bold 38px system-ui, sans-serif";
+            ctx.fillText(`VS ${team || "OPPONENT"}`, rightAreaX, 220);
+
+            // Layer 6: Match Details Section (Right Side Bottom Grouping)
+            const panelY = 500;
+
+            // Competition Title & Squad Unit
             ctx.fillStyle = textColor;
-            ctx.font = "800 28px system-ui, sans-serif";
-            ctx.fillText(formattedTime ? `KICK-OFF — ${formattedTime}` : "KICK-OFF TIME PENDING", canvas.width / 2, panelY + 140);
+            ctx.font = "bold 38px system-ui, sans-serif";
+            ctx.fillText(comp || "MATCHDAY PREVIEW", rightAreaX, panelY);
 
-            // Venue Location
+            ctx.fillStyle = brandingColor;
+            ctx.font = "900 28px system-ui, sans-serif";
+            ctx.fillText(squad || "FIRST TEAM", rightAreaX, panelY + 55);
+
+            // Match Date
+            ctx.fillStyle = textColor;
+            ctx.font = "bold 32px system-ui, sans-serif";
+            ctx.fillText(date || "DATE PENDING", rightAreaX, panelY + 120);
+
+            // Kick-Off Time (HH:MM)
+            ctx.fillStyle = textColor;
+            ctx.font = "800 30px system-ui, sans-serif";
+            ctx.fillText(formattedTime ? `KICK-OFF — ${formattedTime}` : "KICK-OFF TIME PENDING", rightAreaX, panelY + 175);
+
+            // Venue Textbox Display
             ctx.fillStyle = "#94a3b8";
-            ctx.font = "600 24px system-ui, sans-serif";
-            ctx.fillText(venue ? `VENUE: ${venue}` : "VENUE DATA UNSET", canvas.width / 2, panelY + 185);
+            ctx.font = "600 26px system-ui, sans-serif";
+            ctx.fillText(venue ? `VENUE: ${venue}` : "VENUE DATA UNSET", rightAreaX, panelY + 230);
         }
     </script>
 </body>
