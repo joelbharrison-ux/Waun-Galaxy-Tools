@@ -211,16 +211,33 @@
                 </div>
             </div>
 
-            <!-- Background Image Opacity Slider (Increased default to 0.90) -->
-            <div class="form-group">
-                <label for="bg-opacity-slider">Background Image Opacity (<span id="opacity-val">90%</span>)</label>
-                <input type="range" id="bg-opacity-slider" min="0" max="1" step="0.05" value="0.9" oninput="onOpacityChange(this.value)">
+            <!-- Background Image Controls (Opacity, Pan X/Y, Scale Zoom) -->
+            <div class="row-grid">
+                <div class="form-group">
+                    <label for="bg-opacity-slider">Background Opacity (<span id="opacity-val">90%</span>)</label>
+                    <input type="range" id="bg-opacity-slider" min="0" max="1" step="0.05" value="0.9" oninput="onOpacityChange(this.value)">
+                </div>
+                <div class="form-group">
+                    <label for="bg-zoom-slider">Background Zoom (<span id="zoom-val">100%</span>)</label>
+                    <input type="range" id="bg-zoom-slider" min="0.5" max="2.5" step="0.05" value="1.0" oninput="onZoomChange(this.value)">
+                </div>
+            </div>
+
+            <div class="row-grid">
+                <div class="form-group">
+                    <label for="bg-offset-x-slider">Horizontal Pan (X Offset: <span id="offset-x-val">0px</span>)</label>
+                    <input type="range" id="bg-offset-x-slider" min="-300" max="300" step="5" value="0" oninput="onOffsetXChange(this.value)">
+                </div>
+                <div class="form-group">
+                    <label for="bg-offset-y-slider">Vertical Pan (Y Offset: <span id="offset-y-val">0px</span>)</label>
+                    <input type="range" id="bg-offset-y-slider" min="-300" max="300" step="5" value="0" oninput="onOffsetYChange(this.value)">
+                </div>
             </div>
 
             <hr>
 
             <!-- Sponsor Logos Uploaders -->
-            <label>Sponsor Logos (Up to 3 - Centered Automatically)</label>
+            <label>Sponsor Logos (Up to 3 - Leave empty to hide sponsor strip)</label>
             <div class="triple-grid" style="margin-bottom: 16px;">
                 <input type="file" id="sponsor1-uploader" accept="image/*" onchange="onSponsorUploaded(0)">
                 <input type="file" id="sponsor2-uploader" accept="image/*" onchange="onSponsorUploaded(1)">
@@ -345,11 +362,29 @@
             updateCanvasPreview();
         }
 
+        function onZoomChange(val) {
+            document.getElementById('zoom-val').textContent = `${Math.round(val * 100)}%`;
+            updateCanvasPreview();
+        }
+
+        function onOffsetXChange(val) {
+            document.getElementById('offset-x-val').textContent = `${val}px`;
+            updateCanvasPreview();
+        }
+
+        function onOffsetYChange(val) {
+            document.getElementById('offset-y-val').textContent = `${val}px`;
+            updateCanvasPreview();
+        }
+
         function getCurrentState() {
             return {
                 homeAway: document.getElementById('home-away-select').value,
                 opponentLogoSelect: document.getElementById('manual-opponent-logo-select').value,
                 bgOpacity: document.getElementById('bg-opacity-slider').value,
+                bgZoom: document.getElementById('bg-zoom-slider').value,
+                bgOffsetX: document.getElementById('bg-offset-x-slider').value,
+                bgOffsetY: document.getElementById('bg-offset-y-slider').value,
                 compInput: document.getElementById('comp-input').value,
                 squadInput: document.getElementById('squad-input').value,
                 teamInput: document.getElementById('team-input').value,
@@ -369,6 +404,20 @@
             document.getElementById('manual-opponent-logo-select').value = state.opponentLogoSelect;
             document.getElementById('bg-opacity-slider').value = state.bgOpacity;
             document.getElementById('opacity-val').textContent = `${Math.round(state.bgOpacity * 100)}%`;
+            
+            if(state.bgZoom !== undefined) {
+                document.getElementById('bg-zoom-slider').value = state.bgZoom;
+                document.getElementById('zoom-val').textContent = `${Math.round(state.bgZoom * 100)}%`;
+            }
+            if(state.bgOffsetX !== undefined) {
+                document.getElementById('bg-offset-x-slider').value = state.bgOffsetX;
+                document.getElementById('offset-x-val').textContent = `${state.bgOffsetX}px`;
+            }
+            if(state.bgOffsetY !== undefined) {
+                document.getElementById('bg-offset-y-slider').value = state.bgOffsetY;
+                document.getElementById('offset-y-val').textContent = `${state.bgOffsetY}px`;
+            }
+
             document.getElementById('comp-input').value = state.compInput;
             document.getElementById('squad-input').value = state.squadInput;
             document.getElementById('team-input').value = state.teamInput;
@@ -644,7 +693,40 @@
         function onManualImageChange() { resolveOpponentImagePipeline(); saveState(); }
         function onManualTeamTextInput() { resolveOpponentImagePipeline(); updateCanvasPreview(); }
 
-        function drawCrestWithLabel(imgObj, fallbackText, labelText, centerX, centerY, crestDimension, crestBgColor) {
+        // Multi-line Text Wrapping Helper for Sidebar Labels
+        function drawWrappedTextAbove(text, centerX, bottomY, maxWidth, lineHeight) {
+            ctx.fillStyle = "#0f172a";
+            ctx.font = "bold 18px system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "alphabetic";
+
+            const words = text.split(" ");
+            let lines = [];
+            let currentLine = words[0] || "";
+
+            for (let i = 1; i < words.length; i++) {
+                let testLine = currentLine + " " + words[i];
+                let metrics = ctx.measureText(testLine);
+                if (metrics.width > maxWidth) {
+                    lines.push(currentLine);
+                    currentLine = words[i];
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            lines.push(currentLine);
+
+            // Render bottom-up starting above badge
+            lines.reverse().forEach((line, index) => {
+                ctx.fillText(line, centerX, bottomY - (index * lineHeight));
+            });
+        }
+
+        function drawCrestWithLabelAbove(imgObj, fallbackText, labelText, centerX, centerY, crestDimension, crestBgColor) {
+            // Label rendering placed ABOVE the badge
+            drawWrappedTextAbove(labelText, centerX, centerY - (crestDimension / 2) - 14, 210, 22);
+
+            // Crest / Badge Outer Fill
             ctx.fillStyle = crestBgColor;
             ctx.beginPath();
             ctx.arc(centerX, centerY, (crestDimension / 2) + 6, 0, Math.PI * 2);
@@ -664,12 +746,6 @@
                 ctx.textBaseline = "middle";
                 ctx.fillText(fallbackText, centerX, centerY);
             }
-
-            ctx.fillStyle = "#0f172a";
-            ctx.font = "bold 16px system-ui, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "top";
-            ctx.fillText(labelText, centerX, centerY + (crestDimension / 2) + 10);
         }
 
         function updateCanvasPreview() {
@@ -683,15 +759,24 @@
             const homeCrestBg = document.getElementById('home-crest-bg-color').value;
             const awayCrestBg = document.getElementById('away-crest-bg-color').value;
             const textColor = document.getElementById('text-color').value;
+
+            // Image Transforms
             const bgOpacity = parseFloat(document.getElementById('bg-opacity-slider').value);
+            const bgZoom = parseFloat(document.getElementById('bg-zoom-slider').value);
+            const bgOffsetX = parseFloat(document.getElementById('bg-offset-x-slider').value);
+            const bgOffsetY = parseFloat(document.getElementById('bg-offset-y-slider').value);
             const isHome = document.getElementById('home-away-select').value === "HOME";
 
             const leftStripWidth = 240; 
-            const bottomStripHeight = 220; 
+            
+            // Check active sponsors to conditionally hide bottom strip & expand background
+            const activeSponsors = sponsorImgs.filter(img => img.src && img.complete && img.naturalWidth !== 0);
+            const hasSponsors = activeSponsors.length > 0;
+            const bottomStripHeight = hasSponsors ? 220 : 0; 
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Layer 1: Background Image Centered in Viewport Area (with Opacity Control)
+            // Layer 1: Background Image Area (Expands down to canvas height if no sponsors exist)
             const activeViewWidth = canvas.width - leftStripWidth;
             const activeViewHeight = canvas.height - bottomStripHeight;
 
@@ -707,22 +792,37 @@
                 if (imgRatio > viewRatio) {
                     drawH = activeViewHeight;
                     drawW = activeViewHeight * imgRatio;
-                    drawX = leftStripWidth + (activeViewWidth - drawW) / 2;
-                    drawY = 0;
                 } else {
                     drawW = activeViewWidth;
                     drawH = activeViewWidth / imgRatio;
-                    drawX = leftStripWidth;
-                    drawY = (activeViewHeight - drawH) / 2;
                 }
 
+                // Apply Scale Zoom
+                drawW *= bgZoom;
+                drawH *= bgZoom;
+
+                // Center Image and Apply Offsets (X & Y)
+                drawX = leftStripWidth + ((activeViewWidth - drawW) / 2) + bgOffsetX;
+                drawY = ((activeViewHeight - drawH) / 2) + bgOffsetY;
+
                 ctx.save();
+                // Clip drawing area inside active viewport bounds
+                ctx.beginPath();
+                ctx.rect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
+                ctx.clip();
+
                 ctx.globalAlpha = bgOpacity;
                 ctx.drawImage(posterBackgroundImg, drawX, drawY, drawW, drawH);
                 ctx.restore();
 
-                ctx.fillStyle = "rgba(10, 15, 30, 0.45)"; // Reduced dimming layer to let image opacity show through better
+                // Dimming Layer
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
+                ctx.clip();
+                ctx.fillStyle = "rgba(10, 15, 30, 0.45)";
                 ctx.fillRect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
+                ctx.restore();
             }
 
             // Outer Top Framing Accent Bar
@@ -738,23 +838,21 @@
 
             // Layer 2: Left Side White Panel Overlay
             ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, leftStripWidth, canvas.height - bottomStripHeight);
+            ctx.fillRect(0, 0, leftStripWidth, canvas.height);
 
             // Subtle Right Border Accent on Left Strip
             ctx.fillStyle = brandingColor;
-            ctx.fillRect(leftStripWidth - 5, 0, 5, canvas.height - bottomStripHeight);
+            ctx.fillRect(leftStripWidth - 5, 0, 5, canvas.height);
 
-            // Layer 3: Bottom Horizontal White Sponsor Strip
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, canvas.height - bottomStripHeight, canvas.width, bottomStripHeight);
-            
-            // Top Accent Line on Bottom Sponsor Strip
-            ctx.fillStyle = brandingColor;
-            ctx.fillRect(leftStripWidth, canvas.height - bottomStripHeight, activeViewWidth, 5);
+            // Layer 3: Bottom Horizontal White Sponsor Strip (Only drawn if sponsors exist)
+            if (hasSponsors) {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, canvas.height - bottomStripHeight, canvas.width, bottomStripHeight);
+                
+                // Top Accent Line on Bottom Sponsor Strip
+                ctx.fillStyle = brandingColor;
+                ctx.fillRect(leftStripWidth, canvas.height - bottomStripHeight, activeViewWidth, 5);
 
-            // Render Selected Sponsor Logos (Centrally Aligned)
-            const activeSponsors = sponsorImgs.filter(img => img.src && img.complete && img.naturalWidth !== 0);
-            if (activeSponsors.length > 0) {
                 const sponsorCount = activeSponsors.length;
                 const slotWidth = canvas.width / sponsorCount;
                 const maxSponsorH = 140;
@@ -772,12 +870,6 @@
 
                     ctx.drawImage(img, centerX - (renderW / 2), centerY - (renderH / 2), renderW, renderH);
                 });
-            } else {
-                ctx.fillStyle = "#94a3b8";
-                ctx.font = "bold 18px system-ui, sans-serif";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText("OFFICIAL CLUB SPONSORS", canvas.width / 2, canvas.height - (bottomStripHeight / 2));
             }
 
             // Layer 4: Optional Competition Logo (Top Right)
@@ -788,8 +880,8 @@
             // Layer 5: Left-Side Vertical Stacked Club Logos
             const crestDimension = 150;
             const centerX = leftStripWidth / 2;
-            const topY = 170;
-            const bottomY = 490;
+            const topY = 220;
+            const bottomY = 620;
 
             const waunLogoData = {
                 img: clubLogoImg,
@@ -805,17 +897,17 @@
             const topTeam = isHome ? waunLogoData : oppLogoData;
             const bottomTeam = isHome ? oppLogoData : waunLogoData;
 
-            // Draw Logos & Labels
-            drawCrestWithLabel(topTeam.img, topTeam.fallback, topTeam.label, centerX, topY, crestDimension, homeCrestBg);
+            // Draw Logos & Labels (Names positioned ABOVE badges)
+            drawCrestWithLabelAbove(topTeam.img, topTeam.fallback, topTeam.label, centerX, topY, crestDimension, homeCrestBg);
 
-            const vsY = (topY + bottomY) / 2 + 5;
+            const vsY = (topY + bottomY) / 2 + 10;
             ctx.fillStyle = "#0f172a";
             ctx.font = "black italic 900 48px system-ui, sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText("VS", centerX, vsY);
 
-            drawCrestWithLabel(bottomTeam.img, bottomTeam.fallback, bottomTeam.label, centerX, bottomY, crestDimension, awayCrestBg);
+            drawCrestWithLabelAbove(bottomTeam.img, bottomTeam.fallback, bottomTeam.label, centerX, bottomY, crestDimension, awayCrestBg);
 
             // Layer 6: Main Content Area (Top Right Merged Squad & Opponent Name)
             const rightAreaX = leftStripWidth + 45;
@@ -836,8 +928,8 @@
             ctx.letterSpacing = "0px";
             ctx.fillText(`${squadText} VS ${opponentText}`, rightAreaX, 95);
 
-            // Layer 7: Match Details (Moved down as low as possible right above the 220px sponsor strip)
-            const panelY = 590; 
+            // Layer 7: Match Details Panel
+            const panelY = hasSponsors ? 590 : 680; 
 
             ctx.fillStyle = brandingColor;
             ctx.font = "900 30px system-ui, sans-serif";
