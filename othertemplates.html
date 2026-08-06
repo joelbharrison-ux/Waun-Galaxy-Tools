@@ -211,7 +211,7 @@
                 </div>
             </div>
 
-            <!-- Background Image Controls (Opacity, Pan X/Y, Scale Zoom) -->
+            <!-- Background Image Controls -->
             <div class="row-grid">
                 <div class="form-group">
                     <label for="bg-opacity-slider">Background Opacity (<span id="opacity-val">90%</span>)</label>
@@ -692,7 +692,6 @@
         function onManualImageChange() { resolveOpponentImagePipeline(); saveState(); }
         function onManualTeamTextInput() { resolveOpponentImagePipeline(); updateCanvasPreview(); }
 
-        // Helper to draw text lines anchored from a reference Y point
         function drawWrappedText(text, centerX, startY, maxWidth, lineHeight, isBelow = false) {
             ctx.fillStyle = "#0f172a";
             ctx.font = "bold 18px system-ui, sans-serif";
@@ -715,13 +714,11 @@
             lines.push(currentLine);
 
             if (isBelow) {
-                // Render top-down starting below badge
                 ctx.textBaseline = "top";
                 lines.forEach((line, index) => {
                     ctx.fillText(line, centerX, startY + (index * lineHeight));
                 });
             } else {
-                // Render bottom-up starting above badge
                 ctx.textBaseline = "alphabetic";
                 lines.reverse().forEach((line, index) => {
                     ctx.fillText(line, centerX, startY - (index * lineHeight));
@@ -731,14 +728,11 @@
 
         function drawCrestWithLabel(imgObj, fallbackText, labelText, centerX, centerY, crestDimension, crestBgColor, isTopTeam) {
             if (isTopTeam) {
-                // Position label UNDERNEATH logo for top team
                 drawWrappedText(labelText, centerX, centerY + (crestDimension / 2) + 14, 220, 22, true);
             } else {
-                // Position label ABOVE logo for bottom team
                 drawWrappedText(labelText, centerX, centerY - (crestDimension / 2) - 14, 220, 22, false);
             }
 
-            // Crest / Badge Outer Fill
             ctx.fillStyle = crestBgColor;
             ctx.beginPath();
             ctx.arc(centerX, centerY, (crestDimension / 2) + 6, 0, Math.PI * 2);
@@ -781,7 +775,7 @@
 
             const leftStripWidth = 240; 
             
-            // Check active sponsors to conditionally hide bottom strip & expand background
+            // Active sponsors check
             const activeSponsors = sponsorImgs.filter(img => img.src && img.complete && img.naturalWidth !== 0);
             const hasSponsors = activeSponsors.length > 0;
             const bottomStripHeight = hasSponsors ? 220 : 0; 
@@ -878,12 +872,13 @@
                 });
             }
 
-            // Layer 4: Optional Competition Logo (Top Right)
+            // Layer 4: Competition Logo (Doubled size: 200px x 200px)
             if (compLogoImg.src && compLogoImg.complete && compLogoImg.naturalWidth !== 0) {
-                ctx.drawImage(compLogoImg, canvas.width - 150, 35, 100, 100);
+                const compSize = 200;
+                ctx.drawImage(compLogoImg, canvas.width - compSize - 35, 35, compSize, compSize);
             }
 
-            // Layer 5: Left-Side Vertical Stacked Club Logos (Bigger crest dimension to fill horizontal white space)
+            // Layer 5: Left-Side Vertical Stacked Club Logos
             const crestDimension = 200;
             const centerX = leftStripWidth / 2;
             const topY = 200;
@@ -903,7 +898,6 @@
             const topTeam = isHome ? waunLogoData : oppLogoData;
             const bottomTeam = isHome ? oppLogoData : waunLogoData;
 
-            // Render Top Badge (Label Underneath)
             drawCrestWithLabel(topTeam.img, topTeam.fallback, topTeam.label, centerX, topY, crestDimension, homeCrestBg, true);
 
             const vsY = (topY + bottomY) / 2;
@@ -913,10 +907,9 @@
             ctx.textBaseline = "middle";
             ctx.fillText("VS", centerX, vsY);
 
-            // Render Bottom Badge (Label Above)
             drawCrestWithLabel(bottomTeam.img, bottomTeam.fallback, bottomTeam.label, centerX, bottomY, crestDimension, awayCrestBg, false);
 
-            // Layer 6: Main Content Area (Top Right Merged Squad & Opponent Name)
+            // Layer 6: Main Content Area (Separated onto Two Lines)
             const rightAreaX = leftStripWidth + 45;
 
             ctx.textAlign = "left";
@@ -929,10 +922,15 @@
 
             const squadText = squad || "FIRST TEAM";
             const opponentText = team || "OPPONENTS";
+            
             ctx.fillStyle = textColor;
             ctx.font = "black italic 900 48px system-ui, sans-serif";
             ctx.letterSpacing = "0px";
-            ctx.fillText(`${squadText} VS ${opponentText}`, rightAreaX, 95);
+            
+            // Line 1: Squad Classification
+            ctx.fillText(squadText, rightAreaX, 95);
+            // Line 2: VS Opponent Name (Underneath)
+            ctx.fillText(`VS ${opponentText}`, rightAreaX, 155);
 
             // Layer 7: Match Details Panel
             const panelY = hasSponsors ? 590 : 680; 
