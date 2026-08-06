@@ -336,7 +336,6 @@
         sponsorImgs.forEach(img => img.onload = () => updateCanvasPreview());
         opponentLogoImg.onerror = () => { updateCanvasPreview(); };
 
-        // Undo/Redo State History System
         let historyStack = [];
         let historyIndex = -1;
         let isUndoRedoOperation = false;
@@ -693,13 +692,12 @@
         function onManualImageChange() { resolveOpponentImagePipeline(); saveState(); }
         function onManualTeamTextInput() { resolveOpponentImagePipeline(); updateCanvasPreview(); }
 
-        // Multi-line Text Wrapping Helper for Sidebar Labels
-        function drawWrappedTextAbove(text, centerX, bottomY, maxWidth, lineHeight) {
+        // Helper to draw text lines anchored from a reference Y point
+        function drawWrappedText(text, centerX, startY, maxWidth, lineHeight, isBelow = false) {
             ctx.fillStyle = "#0f172a";
             ctx.font = "bold 18px system-ui, sans-serif";
             ctx.textAlign = "center";
-            ctx.textBaseline = "alphabetic";
-
+            
             const words = text.split(" ");
             let lines = [];
             let currentLine = words[0] || "";
@@ -716,15 +714,29 @@
             }
             lines.push(currentLine);
 
-            // Render bottom-up starting above badge
-            lines.reverse().forEach((line, index) => {
-                ctx.fillText(line, centerX, bottomY - (index * lineHeight));
-            });
+            if (isBelow) {
+                // Render top-down starting below badge
+                ctx.textBaseline = "top";
+                lines.forEach((line, index) => {
+                    ctx.fillText(line, centerX, startY + (index * lineHeight));
+                });
+            } else {
+                // Render bottom-up starting above badge
+                ctx.textBaseline = "alphabetic";
+                lines.reverse().forEach((line, index) => {
+                    ctx.fillText(line, centerX, startY - (index * lineHeight));
+                });
+            }
         }
 
-        function drawCrestWithLabelAbove(imgObj, fallbackText, labelText, centerX, centerY, crestDimension, crestBgColor) {
-            // Label rendering placed ABOVE the badge
-            drawWrappedTextAbove(labelText, centerX, centerY - (crestDimension / 2) - 14, 210, 22);
+        function drawCrestWithLabel(imgObj, fallbackText, labelText, centerX, centerY, crestDimension, crestBgColor, isTopTeam) {
+            if (isTopTeam) {
+                // Position label UNDERNEATH logo for top team
+                drawWrappedText(labelText, centerX, centerY + (crestDimension / 2) + 14, 220, 22, true);
+            } else {
+                // Position label ABOVE logo for bottom team
+                drawWrappedText(labelText, centerX, centerY - (crestDimension / 2) - 14, 220, 22, false);
+            }
 
             // Crest / Badge Outer Fill
             ctx.fillStyle = crestBgColor;
@@ -776,11 +788,10 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Layer 1: Background Image Area (Expands down to canvas height if no sponsors exist)
+            // Layer 1: Background Image Area
             const activeViewWidth = canvas.width - leftStripWidth;
             const activeViewHeight = canvas.height - bottomStripHeight;
 
-            // Base Background Fill
             ctx.fillStyle = "#0c111d";
             ctx.fillRect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
 
@@ -797,16 +808,13 @@
                     drawH = activeViewWidth / imgRatio;
                 }
 
-                // Apply Scale Zoom
                 drawW *= bgZoom;
                 drawH *= bgZoom;
 
-                // Center Image and Apply Offsets (X & Y)
                 drawX = leftStripWidth + ((activeViewWidth - drawW) / 2) + bgOffsetX;
                 drawY = ((activeViewHeight - drawH) / 2) + bgOffsetY;
 
                 ctx.save();
-                // Clip drawing area inside active viewport bounds
                 ctx.beginPath();
                 ctx.rect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
                 ctx.clip();
@@ -815,7 +823,6 @@
                 ctx.drawImage(posterBackgroundImg, drawX, drawY, drawW, drawH);
                 ctx.restore();
 
-                // Dimming Layer
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(leftStripWidth, 0, activeViewWidth, activeViewHeight);
@@ -844,12 +851,11 @@
             ctx.fillStyle = brandingColor;
             ctx.fillRect(leftStripWidth - 5, 0, 5, canvas.height);
 
-            // Layer 3: Bottom Horizontal White Sponsor Strip (Only drawn if sponsors exist)
+            // Layer 3: Bottom Horizontal White Sponsor Strip
             if (hasSponsors) {
                 ctx.fillStyle = "#ffffff";
                 ctx.fillRect(0, canvas.height - bottomStripHeight, canvas.width, bottomStripHeight);
                 
-                // Top Accent Line on Bottom Sponsor Strip
                 ctx.fillStyle = brandingColor;
                 ctx.fillRect(leftStripWidth, canvas.height - bottomStripHeight, activeViewWidth, 5);
 
@@ -877,11 +883,11 @@
                 ctx.drawImage(compLogoImg, canvas.width - 150, 35, 100, 100);
             }
 
-            // Layer 5: Left-Side Vertical Stacked Club Logos
-            const crestDimension = 150;
+            // Layer 5: Left-Side Vertical Stacked Club Logos (Bigger crest dimension to fill horizontal white space)
+            const crestDimension = 200;
             const centerX = leftStripWidth / 2;
-            const topY = 220;
-            const bottomY = 620;
+            const topY = 200;
+            const bottomY = 650;
 
             const waunLogoData = {
                 img: clubLogoImg,
@@ -897,17 +903,18 @@
             const topTeam = isHome ? waunLogoData : oppLogoData;
             const bottomTeam = isHome ? oppLogoData : waunLogoData;
 
-            // Draw Logos & Labels (Names positioned ABOVE badges)
-            drawCrestWithLabelAbove(topTeam.img, topTeam.fallback, topTeam.label, centerX, topY, crestDimension, homeCrestBg);
+            // Render Top Badge (Label Underneath)
+            drawCrestWithLabel(topTeam.img, topTeam.fallback, topTeam.label, centerX, topY, crestDimension, homeCrestBg, true);
 
-            const vsY = (topY + bottomY) / 2 + 10;
+            const vsY = (topY + bottomY) / 2;
             ctx.fillStyle = "#0f172a";
             ctx.font = "black italic 900 48px system-ui, sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText("VS", centerX, vsY);
 
-            drawCrestWithLabelAbove(bottomTeam.img, bottomTeam.fallback, bottomTeam.label, centerX, bottomY, crestDimension, awayCrestBg);
+            // Render Bottom Badge (Label Above)
+            drawCrestWithLabel(bottomTeam.img, bottomTeam.fallback, bottomTeam.label, centerX, bottomY, crestDimension, awayCrestBg, false);
 
             // Layer 6: Main Content Area (Top Right Merged Squad & Opponent Name)
             const rightAreaX = leftStripWidth + 45;
@@ -920,7 +927,6 @@
             ctx.letterSpacing = "4px";
             ctx.fillText("UPCOMING FIXTURE", rightAreaX, 55);
 
-            // Merged Squad Unit Classification & Opponent Title
             const squadText = squad || "FIRST TEAM";
             const opponentText = team || "OPPONENTS";
             ctx.fillStyle = textColor;
